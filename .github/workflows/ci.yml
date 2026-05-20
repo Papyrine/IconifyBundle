@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Build (Release) and pack
+        run: dotnet build src/Iconistic.slnx -c Release
+
+      - name: Unit tests (TUnit)
+        run: dotnet run --project src/Tests -c Release
+
+      - name: Blazor tests (bUnit)
+        run: dotnet test src/Iconistic.Web.Tests -c Release --filter "TestCategory!=Playwright"
+
+      - name: Integration tests (consume packed nupkgs)
+        run: dotnet run --project IntegrationTests/IntegrationTests -c Release
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: nugets
+          path: nugets/*.nupkg

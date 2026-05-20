@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <NoWarn>CS1591;NU1608;NU1109;NU5128</NoWarn>
+    <Version>0.1.0</Version>
+    <LangVersion>preview</LangVersion>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <Authors>Simon Cropp</Authors>
+    <Description>Strongly typed Iconify (https://iconify.design) icons for .NET. A source generator downloads icon packs declared via an assembly attribute and emits a typed API, with a Blazor component and a wrapper over the Iconify API.</Description>
+    <PackageTags>iconify;icons;svg;blazor;source-generator</PackageTags>
+    <PackageProjectUrl>https://github.com/SimonCropp/Iconistic</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <ResolveAssemblyReferencesSilent>true</ResolveAssemblyReferencesSilent>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
+    <SignAssembly>false</SignAssembly>
+    <PolyUseEmbeddedAttribute>true</PolyUseEmbeddedAttribute>
+  </PropertyGroup>
+</Project>

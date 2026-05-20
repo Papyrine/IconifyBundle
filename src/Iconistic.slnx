@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="../global.json" />
+    <File Path="../readme.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="nuget.config" />
+  </Folder>
+  <Project Path="Iconistic/Iconistic.csproj" />
+  <Project Path="Iconistic.Generator/Iconistic.Generator.csproj" />
+  <Project Path="Iconistic.Api/Iconistic.Api.csproj" />
+  <Project Path="Iconistic.Blazor/Iconistic.Blazor.csproj" />
+  <Project Path="Iconistic.Web/Iconistic.Web.csproj" />
+  <Project Path="Iconistic.Web.Tests/Iconistic.Web.Tests.csproj" />
+  <Project Path="Tests/Tests.csproj" />
+</Solution>

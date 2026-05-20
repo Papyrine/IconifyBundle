@@ -1,0 +1,70 @@
+@page "/"
+
+<h1>Strongly typed Iconify icons</h1>
+<p class="lead">
+    Every icon below is a compile-time member like <code>Icons.Mdi.Home</code>, downloaded by the
+    source generator and rendered inline by the <code>&lt;Icon&gt;</code> component.
+</p>
+
+<section class="hero">
+    <!-- begin-snippet: blazor-usage -->
+    <Icon Value="Icons.Mdi.Home" />
+    <Icon Value="Icons.Mdi.Heart" Color="#e53935" Size="32" />
+    <Icon Value="Icons.Mdi.Cog" Rotate="1" Class="spin" />
+    <!-- end-snippet -->
+    <Icon Value="Icons.Lucide.Bell" Size="64" Color="#1e88e5" />
+    <Icon Value="Icons.Mdi.Github" Size="64" />
+</section>
+
+<h2>mdi</h2>
+<div class="gallery">
+    @foreach (var sample in Mdi)
+    {
+        <figure>
+            <Icon Value="sample.Icon" Size="32" />
+            <figcaption>@sample.Name</figcaption>
+        </figure>
+    }
+</div>
+
+<h2>lucide</h2>
+<div class="gallery">
+    @foreach (var sample in Lucide)
+    {
+        <figure>
+            <Icon Value="sample.Icon" Size="32" />
+            <figcaption>@sample.Name</figcaption>
+        </figure>
+    }
+</div>
+
+@code {
+    record Sample(string Name, IconisticIcon Icon);
+
+    static readonly Sample[] Mdi =
+    [
+        new("home", Icons.Mdi.Home),
+        new("account", Icons.Mdi.Account),
+        new("cog", Icons.Mdi.Cog),
+        new("heart", Icons.Mdi.Heart),
+        new("magnify", Icons.Mdi.Magnify),
+        new("bell", Icons.Mdi.Bell),
+        new("calendar", Icons.Mdi.Calendar),
+        new("email", Icons.Mdi.Email),
+        new("star", Icons.Mdi.Star),
+        new("delete", Icons.Mdi.Delete),
+        new("download", Icons.Mdi.Download),
+        new("check", Icons.Mdi.Check)
+    ];
+
+    static readonly Sample[] Lucide =
+    [
+        new("house", Icons.Lucide.House),
+        new("settings", Icons.Lucide.Settings),
+        new("search", Icons.Lucide.Search),
+        new("heart", Icons.Lucide.Heart),
+        new("bell", Icons.Lucide.Bell),
+        new("star", Icons.Lucide.Star),
+        new("trash-2", Icons.Lucide.Trash2)
+    ];
+}

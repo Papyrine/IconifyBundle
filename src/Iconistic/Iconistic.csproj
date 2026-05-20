@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0;net9.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsTrimmable>true</IsTrimmable>
+    <IsPackable>true</IsPackable>
+    <IsPackageProject>true</IsPackageProject>
+    <IncludeBuildOutput>true</IncludeBuildOutput>
+    <!-- Pack the source generator and MSBuild props alongside the runtime assembly. -->
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackGenerator</TargetsForTfmSpecificContentInPackage>
+    <GeneratorDll>$(MSBuildThisFileDirectory)..\Iconistic.Generator\bin\$(Configuration)\netstandard2.0\Iconistic.Generator.dll</GeneratorDll>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ProjectDefaults" PrivateAssets="all" />
+    <PackageReference Include="Polyfill" PrivateAssets="all" />
+    <PackageReference Include="System.Text.Json" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
+  </ItemGroup>
+
+  <!--
+    Build the generator before packing so its dll exists. Runs once on the outer (TFM-less) build
+    so the multitargeted TargetFramework is not propagated into the netstandard2.0 generator.
+  -->
+  <Target Name="BuildGenerator" BeforeTargets="DispatchToInnerBuilds;Build" Condition="'$(TargetFramework)' == ''">
+    <MSBuild Projects="..\Iconistic.Generator\Iconistic.Generator.csproj"
+             Properties="Configuration=$(Configuration)"
+             Targets="Build" />
+  </Target>
+
+  <!-- Add generator + build props to the package once (guarded to a single TFM to avoid duplicate package paths). -->
+  <Target Name="PackGenerator">
+    <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+      <TfmSpecificPackageFile Include="$(GeneratorDll)" PackagePath="analyzers\dotnet\cs" />
+      <TfmSpecificPackageFile Include="$(MSBuildThisFileDirectory)build\Iconistic.props" PackagePath="build" />
+    </ItemGroup>
+  </Target>
+</Project>
