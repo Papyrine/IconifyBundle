@@ -35,8 +35,8 @@ public static class Emitter
         builder.Append("/// <summary>Strongly typed access to the <c>").Append(manifest.Prefix).Append("</c> Iconify pack.</summary>\n");
         builder.Append("public static class ").Append(manifest.ClassName).Append('\n');
         builder.Append("{\n");
-        builder.Append("    static readonly global::Iconistic.IconPack pack =\n");
-        builder.Append("        global::Iconistic.IconPack.ForAssembly(typeof(")
+        builder.Append("    static readonly IconPack pack =\n");
+        builder.Append("        IconPack.ForAssembly(typeof(")
             .Append(manifest.ClassName)
             .Append(").Assembly, \"")
             .Append(manifest.Prefix)
@@ -46,7 +46,7 @@ public static class Emitter
         // never emitted), and for the largest packs the comments double the source size and compile time.
         foreach (var (name, member) in Members(manifest))
         {
-            builder.Append("    public static global::Iconistic.Icon ").Append(member).Append(" => pack[\"").Append(Escape(name)).Append("\"];\n");
+            builder.Append("    public static Icon ").Append(member).Append(" => pack[\"").Append(Escape(name)).Append("\"];\n");
         }
 
         builder.Append("\n    /// <summary>The on-disk path of the named icon (present only when the consumer set <c>IconisticExtractDisk</c>).</summary>\n");

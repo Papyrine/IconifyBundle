@@ -7,3 +7,4 @@ global using System.IO.Compression;
 global using System.Text.Json;
 global using System.Text.RegularExpressions;
 global using Replicant;
+global using static VerifyTUnit.Verifier;

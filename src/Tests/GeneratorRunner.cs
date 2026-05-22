@@ -7,81 +7,38 @@ using Microsoft.CodeAnalysis.Text;
 
 static class GeneratorRunner
 {
-    public static GeneratorResult Run(
+    public static GeneratorDriverRunResult Run(
         string? manifest,
-        string prefix = "feather",
-        bool diskMode = false,
-        bool includePackClass = true)
+        bool extractDisk,
+        string prefix = "feather")
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
 
-        var sources = new List<SyntaxTree>
-        {
-            CSharpSyntaxTree.ParseText("public class Dummy;", parseOptions)
-        };
-
-        if (includePackClass)
-        {
-            // Stand-in for the pack class compiled into Iconistic.<Pack>.dll; the generated path
-            // extensions target it via Feather.PathOf(...).
-            var className = IdentifierNaming.ToPascalCase(prefix);
-            sources.Add(
-                CSharpSyntaxTree.ParseText(
-                    $$"""
-                      namespace Iconistic;
-                      public static class {{className}}
-                      {
-                          public static string PathOf(string name) => name;
-                      }
-                      """,
-                    parseOptions));
-        }
-
-        var references = ((string) AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
-            .Split(Path.PathSeparator)
-            .Where(_ => _.Length > 0)
-            .Select(_ => (MetadataReference) MetadataReference.CreateFromFile(_))
-            .Append(MetadataReference.CreateFromFile(typeof(Icon).Assembly.Location))
-            .ToList();
-
         var compilation = CSharpCompilation.Create(
             "GeneratorTest",
-            sources,
-            references,
+            [CSharpSyntaxTree.ParseText("public class Dummy;", parseOptions)],
+            References,
             new(OutputKind.DynamicallyLinkedLibrary));
 
-        var additionalTexts = manifest is null
-            ? ImmutableArray<AdditionalText>.Empty
+        ImmutableArray<AdditionalText> additionalTexts = manifest is null
+            ? []
             : [new TestAdditionalText("pack.manifest", manifest)];
 
         var driver = CSharpGeneratorDriver.Create(
             generators: [new IconisticGenerator().AsSourceGenerator()],
             additionalTexts: additionalTexts,
             parseOptions: parseOptions,
-            optionsProvider: new TestOptionsProvider(diskMode, prefix));
+            optionsProvider: new TestOptionsProvider(extractDisk, prefix));
 
-        var runResult = driver
-            .RunGeneratorsAndUpdateCompilation(compilation, out var output, out _)
-            .GetRunResult();
-
-        var errors = output
-            .GetDiagnostics()
-            .Where(_ => _.Severity == DiagnosticSeverity.Error)
-            .ToImmutableArray();
-
-        var generated = runResult.GeneratedTrees
-            .Select(_ => _.ToString())
-            .ToImmutableArray();
-
-        return new(generated, errors);
+        return driver.RunGenerators(compilation).GetRunResult();
     }
 
-    public sealed record GeneratorResult(
-        ImmutableArray<string> GeneratedSources,
-        ImmutableArray<Diagnostic> CompileErrors)
-    {
-        public string? Single() => GeneratedSources.SingleOrDefault();
-    }
+    static readonly List<MetadataReference> References =
+        ((string) AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
+        .Split(Path.PathSeparator)
+        .Where(_ => _.Length > 0)
+        .Select(_ => (MetadataReference) MetadataReference.CreateFromFile(_))
+        .ToList();
 
     sealed class TestAdditionalText(string path, string text) : AdditionalText
     {
@@ -91,22 +48,22 @@ static class GeneratorRunner
             SourceText.From(text);
     }
 
-    sealed class TestOptionsProvider(bool diskMode, string prefix) : AnalyzerConfigOptionsProvider
+    sealed class TestOptionsProvider(bool extractDisk, string prefix) : AnalyzerConfigOptionsProvider
     {
-        public override AnalyzerConfigOptions GlobalOptions { get; } = new GlobalOptionsImpl(diskMode);
+        public override AnalyzerConfigOptions GlobalOptions { get; } = new GlobalOptionsImpl(extractDisk);
 
         public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => EmptyOptions.Instance;
 
         public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => new FileOptions(prefix);
     }
 
-    sealed class GlobalOptionsImpl(bool diskMode) : AnalyzerConfigOptions
+    sealed class GlobalOptionsImpl(bool extractDisk) : AnalyzerConfigOptions
     {
         public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value)
         {
             if (key == "build_property.IconisticExtractDisk")
             {
-                value = diskMode ? "true" : "false";
+                value = extractDisk ? "true" : "false";
                 return true;
             }
 
