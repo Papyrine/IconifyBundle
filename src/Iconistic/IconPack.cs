@@ -1,7 +1,3 @@
-using System.Collections.Concurrent;
-using System.Reflection;
-using System.Text.Json;
-
 namespace Iconistic;
 
 /// <summary>
@@ -13,12 +9,10 @@ public sealed class IconPack
 {
     static readonly ConcurrentDictionary<Assembly, IconPack> cache = new();
 
-    readonly Assembly assembly;
     readonly Lazy<IReadOnlyDictionary<string, IconData>> icons;
 
     IconPack(Assembly assembly, string prefix, IconisticMode mode)
     {
-        this.assembly = assembly;
         Prefix = prefix;
         Mode = mode;
         icons = new(() => Load(assembly));

@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace Iconistic;
 
 /// <summary>
@@ -7,7 +5,7 @@ namespace Iconistic;
 /// </summary>
 public static class SvgBuilder
 {
-    const string Xmlns = "http://www.w3.org/2000/svg";
+    const string xmlns = "http://www.w3.org/2000/svg";
 
     /// <summary>Builds the SVG using the icon's intrinsic dimensions.</summary>
     public static string Build(Icon icon) =>
@@ -21,7 +19,7 @@ public static class SvgBuilder
     public static string Build(Icon icon, int? width, int? height, string? cssClass)
     {
         var builder = new StringBuilder();
-        builder.Append("<svg xmlns=\"").Append(Xmlns).Append('"');
+        builder.Append("<svg xmlns=\"").Append(xmlns).Append('"');
         builder.Append(" width=\"").Append(width ?? icon.Width).Append('"');
         builder.Append(" height=\"").Append(height ?? icon.Height).Append('"');
         builder.Append(" viewBox=\"0 0 ").Append(icon.Width).Append(' ').Append(icon.Height).Append('"');
