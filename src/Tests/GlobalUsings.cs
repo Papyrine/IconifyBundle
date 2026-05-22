@@ -3,3 +3,7 @@ global using Iconistic.Generator;
 global using TUnit.Core;
 global using TUnit.Assertions;
 global using TUnit.Assertions.Extensions;
+global using System.IO.Compression;
+global using System.Text.Json;
+global using System.Text.RegularExpressions;
+global using Replicant;

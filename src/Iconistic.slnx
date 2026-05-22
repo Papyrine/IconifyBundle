@@ -9,5 +9,4 @@
   </Folder>
   <Project Path="Iconistic.Blazor/Iconistic.Blazor.csproj" />
   <Project Path="Tests/Tests.csproj" />
-  <Project Path="PackBuilder/PackBuilder.csproj" />
 </Solution>
