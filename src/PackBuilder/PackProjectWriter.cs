@@ -1,10 +1,7 @@
-using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Iconistic;
 using Iconistic.Generator;
-
-namespace PackBuilder;
 
 /// <summary>
 /// Materialises a buildable <c>Iconistic.&lt;Pack&gt;</c> project from a downloaded Iconify pack JSON.

@@ -1,5 +1,3 @@
-namespace Tests;
-
 // Code samples surfaced in the readme via MarkdownSnippets.
 static class Snippets
 {
@@ -13,7 +11,7 @@ static class Snippets
         using var stream = icon.OpenStream(); // UTF-8 stream of the SVG
         #endregion
 
-        System.Console.WriteLine(svg);
-        System.Console.WriteLine(stream.Length);
+        Console.WriteLine(svg);
+        Console.WriteLine(stream.Length);
     }
 }

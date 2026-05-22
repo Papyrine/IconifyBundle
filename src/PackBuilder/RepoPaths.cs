@@ -1,5 +1,3 @@
-namespace PackBuilder;
-
 static class RepoPaths
 {
     public static string Root { get; } = Find();

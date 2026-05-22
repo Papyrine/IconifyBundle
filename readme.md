@@ -47,7 +47,7 @@ var icon = new Icon("activity", "<path stroke=\"currentColor\" d=\"M12 2v20\"/>"
 var svg = icon.Svg;                   // full <svg> document
 using var stream = icon.OpenStream(); // UTF-8 stream of the SVG
 ```
-<sup><a href='/src/Tests/Snippets.cs#L8-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-RuntimeUsage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/Snippets.cs#L6-L12' title='Snippet source file'>snippet source</a> | <a href='#snippet-RuntimeUsage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Blazor

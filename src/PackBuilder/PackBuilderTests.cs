@@ -1,8 +1,3 @@
-using System.IO.Compression;
-using Replicant;
-
-namespace PackBuilder;
-
 public class PackBuilderTests
 {
     [Test]
@@ -41,7 +36,7 @@ public class PackBuilderTests
 
     static async Task AssertPackageContents(string nupkg, string prefix, PackProjectWriter.PackProject project)
     {
-        using var archive = ZipFile.OpenRead(nupkg);
+        await using var archive = await ZipFile.OpenReadAsync(nupkg);
         var entries = archive.Entries
             .Select(_ => _.FullName.Replace('\\', '/'))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);

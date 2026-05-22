@@ -1,5 +1,3 @@
-namespace Tests;
-
 public class IconisticGeneratorTests
 {
     const string FeatherManifest =

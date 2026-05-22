@@ -1,7 +1,4 @@
 using System.Text.Json;
-using Replicant;
-
-namespace PackBuilder;
 
 static class PackSelection
 {

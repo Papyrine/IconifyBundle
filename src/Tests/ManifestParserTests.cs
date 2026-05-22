@@ -1,7 +1,3 @@
-using Iconistic.Generator;
-
-namespace Tests;
-
 public class ManifestParserTests
 {
     [Test]

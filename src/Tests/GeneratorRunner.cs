@@ -1,12 +1,9 @@
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
-using Iconistic.Generator;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
-
-namespace Tests;
 
 static class GeneratorRunner
 {

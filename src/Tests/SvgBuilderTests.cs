@@ -1,5 +1,3 @@
-namespace Tests;
-
 public class SvgBuilderTests
 {
     static readonly Icon Sample = new("activity", "<path d=\"M1 1\"/>", 24, 24);
