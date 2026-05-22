@@ -16,10 +16,12 @@ public class PackBuilderTests
         await using var cache = new HttpCache(RepoPaths.Cache);
         var prefixes = await PackSelection.ResolveAsync(cache);
         await Assert.That(prefixes.Count).IsGreaterThan(0);
+        Log.Line($"Generating {prefixes.Count} pack projects...");
 
         // Generate every pack project on disk first (downloads + writing tens of thousands of SVGs, so
         // run in parallel; each pack writes to its own directory).
         var generated = new ConcurrentBag<PackProjectWriter.PackProject>();
+        var done = 0;
         await Parallel.ForEachAsync(
             prefixes,
             new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
@@ -27,7 +29,9 @@ public class PackBuilderTests
             {
                 await using var json = await cache.StreamAsync(
                     $"https://raw.githubusercontent.com/iconify/icon-sets/master/json/{prefix}.json", cancel: token);
-                generated.Add(PackProjectWriter.Write(prefix, json, RepoPaths.Packs));
+                var project = PackProjectWriter.Write(prefix, json, RepoPaths.Packs);
+                generated.Add(project);
+                Log.Line($"[{Interlocked.Increment(ref done)}/{prefixes.Count}] generated {prefix} ({project.IconCount} icons)");
             });
 
         var projects = generated.ToList();
@@ -36,21 +40,21 @@ public class PackBuilderTests
         var solutionPath = Path.Combine(RepoPaths.Packs, "Packs.slnx");
         await File.WriteAllTextAsync(solutionPath, BuildSolution(projects));
 
+        Log.Line($"Packing solution ({projects.Count} projects)...");
+        // echo: stream `dotnet pack` output live so the CI log shows steady progress through the long build.
         var result = await Dotnet.RunAsync(
-            $"pack \"{solutionPath}\" -c Release -o \"{RepoPaths.Nugets}\" --nologo");
-        if (result.ExitCode != 0)
-        {
-            Console.WriteLine(result.Output);
-        }
-
+            $"pack \"{solutionPath}\" -c Release -o \"{RepoPaths.Nugets}\" --nologo", echo: true);
         await Assert.That(result.ExitCode).IsEqualTo(0);
 
+        Log.Line($"Verifying {projects.Count} packages...");
         foreach (var project in projects)
         {
             var nupkg = Path.Combine(RepoPaths.Nugets, $"{project.PackageId}.{RepoPaths.Version}.nupkg");
             await Assert.That(File.Exists(nupkg)).IsTrue();
             await AssertPackageContents(nupkg, project);
         }
+
+        Log.Line($"Done: {projects.Count} packs.");
     }
 
     static string BuildSolution(IEnumerable<PackProjectWriter.PackProject> projects)
