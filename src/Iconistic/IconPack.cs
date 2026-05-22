@@ -66,21 +66,21 @@ public sealed class IconPack
                                $"Pack assembly '{assembly.GetName().Name}' does not contain the embedded 'iconistic.pack.json' resource.");
         using var document = JsonDocument.Parse(stream);
         var root = document.RootElement;
-        var defaultWidth = root.TryGetProperty("width", out var w) ? w.GetInt32() : 16;
-        var defaultHeight = root.TryGetProperty("height", out var h) ? h.GetInt32() : 16;
+        var defaultWidth = root.TryGetProperty("width", out var w) ? w.GetDouble() : 16;
+        var defaultHeight = root.TryGetProperty("height", out var h) ? h.GetDouble() : 16;
 
         var result = new Dictionary<string, IconData>(StringComparer.Ordinal);
         foreach (var icon in root.GetProperty("icons").EnumerateObject())
         {
             var value = icon.Value;
             var body = value.GetProperty("body").GetString()!;
-            var iconWidth = value.TryGetProperty("width", out var iw) ? iw.GetInt32() : defaultWidth;
-            var iconHeight = value.TryGetProperty("height", out var ih) ? ih.GetInt32() : defaultHeight;
+            var iconWidth = value.TryGetProperty("width", out var iw) ? iw.GetDouble() : defaultWidth;
+            var iconHeight = value.TryGetProperty("height", out var ih) ? ih.GetDouble() : defaultHeight;
             result[icon.Name] = new(body, iconWidth, iconHeight);
         }
 
         return result;
     }
 
-    readonly record struct IconData(string Body, int Width, int Height);
+    readonly record struct IconData(string Body, double Width, double Height);
 }

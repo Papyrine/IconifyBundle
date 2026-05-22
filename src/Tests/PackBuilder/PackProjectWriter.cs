@@ -23,8 +23,8 @@ static class PackProjectWriter
 
         using var document = JsonDocument.Parse(json); // UTF-8 stream parsed directly - no intermediate string
         var root = document.RootElement;
-        var defaultWidth = root.TryGetProperty("width", out var w) ? w.GetInt32() : 16;
-        var defaultHeight = root.TryGetProperty("height", out var h) ? h.GetInt32() : 16;
+        var defaultWidth = root.TryGetProperty("width", out var w) ? w.GetDouble() : 16;
+        var defaultHeight = root.TryGetProperty("height", out var h) ? h.GetDouble() : 16;
         var iconsElement = root.GetProperty("icons");
 
         var names = new List<string>();
@@ -43,8 +43,8 @@ static class PackProjectWriter
                 var name = entry.Name;
                 var value = entry.Value;
                 var body = value.GetProperty("body").GetString()!;
-                var iconWidth = value.TryGetProperty("width", out var iw) ? iw.GetInt32() : defaultWidth;
-                var iconHeight = value.TryGetProperty("height", out var ih) ? ih.GetInt32() : defaultHeight;
+                var iconWidth = value.TryGetProperty("width", out var iw) ? iw.GetDouble() : defaultWidth;
+                var iconHeight = value.TryGetProperty("height", out var ih) ? ih.GetDouble() : defaultHeight;
 
                 names.Add(name);
 

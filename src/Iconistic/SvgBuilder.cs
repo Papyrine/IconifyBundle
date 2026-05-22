@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Iconistic;
 
 /// <summary>
@@ -20,9 +22,9 @@ public static class SvgBuilder
     {
         var builder = new StringBuilder();
         builder.Append("<svg xmlns=\"").Append(xmlns).Append('"');
-        builder.Append(" width=\"").Append(width ?? icon.Width).Append('"');
-        builder.Append(" height=\"").Append(height ?? icon.Height).Append('"');
-        builder.Append(" viewBox=\"0 0 ").Append(icon.Width).Append(' ').Append(icon.Height).Append('"');
+        builder.Append(" width=\"").Append(Format(width ?? icon.Width)).Append('"');
+        builder.Append(" height=\"").Append(Format(height ?? icon.Height)).Append('"');
+        builder.Append(" viewBox=\"0 0 ").Append(Format(icon.Width)).Append(' ').Append(Format(icon.Height)).Append('"');
         if (!string.IsNullOrEmpty(cssClass))
         {
             builder.Append(" class=\"").Append(cssClass).Append('"');
@@ -33,4 +35,7 @@ public static class SvgBuilder
         builder.Append("</svg>");
         return builder.ToString();
     }
+
+    // SVG numbers are always '.'-decimal and culture-independent.
+    static string Format(double value) => value.ToString(CultureInfo.InvariantCulture);
 }

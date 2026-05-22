@@ -6,13 +6,16 @@
 @if (Value.Body is not null)
 {
     <svg xmlns="http://www.w3.org/2000/svg"
-         width="@(Width ?? Value.Width)"
-         height="@(Height ?? Value.Height)"
-         viewBox="@($"0 0 {Value.Width} {Value.Height}")"
+         width="@F(Width ?? Value.Width)"
+         height="@F(Height ?? Value.Height)"
+         viewBox="@($"0 0 {F(Value.Width)} {F(Value.Height)}")"
          @attributes="AdditionalAttributes">@((MarkupString)Value.Body)</svg>
 }
 
 @code {
+
+    // SVG numbers are always '.'-decimal and culture-independent.
+    static string F(double value) => value.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>The icon to render, e.g. <c>Feather.Activity</c>.</summary>
     [Parameter]
