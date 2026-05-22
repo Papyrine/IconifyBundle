@@ -20,7 +20,7 @@ public class PackBuilderTests
         foreach (var prefix in prefixes)
         {
             Console.WriteLine(prefix);
-            var json = await cache.StringAsync(
+            await using var json = await cache.StreamAsync(
                 $"https://raw.githubusercontent.com/iconify/icon-sets/master/json/{prefix}.json");
             var project = PackProjectWriter.Write(prefix, json, RepoPaths.Packs);
 

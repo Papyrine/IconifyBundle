@@ -5,7 +5,7 @@ static class PackProjectWriter
 {
     public sealed record PackProject(string PackageId, string CsprojPath, int IconCount);
 
-    public static PackProject Write(string prefix, string json, string packsDir)
+    public static PackProject Write(string prefix, Stream json, string packsDir)
     {
         var pascal = IdentifierNaming.ToPascalCase(prefix);
         var packageId = $"Iconistic.{pascal}";
@@ -21,7 +21,7 @@ static class PackProjectWriter
         Directory.CreateDirectory(iconsDir);
         Directory.CreateDirectory(buildDir);
 
-        using var document = JsonDocument.Parse(json);
+        using var document = JsonDocument.Parse(json); // UTF-8 stream parsed directly - no intermediate string
         var root = document.RootElement;
         var defaultWidth = root.TryGetProperty("width", out var w) ? w.GetInt32() : 16;
         var defaultHeight = root.TryGetProperty("height", out var h) ? h.GetInt32() : 16;
