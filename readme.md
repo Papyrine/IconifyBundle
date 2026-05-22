@@ -3,6 +3,7 @@
 Strongly-typed [Iconify](https://iconify.design/) icons for .NET, with a Roslyn source generator,
 two delivery modes (embedded **Resource** or on-disk **Disk**), and Blazor helpers.
 
+
 ## How it works
 
 * **`Iconistic`** — the core runtime plus the source generator (shipped together).
@@ -11,6 +12,7 @@ two delivery modes (embedded **Resource** or on-disk **Disk**), and Blazor helpe
   packs it. They are *not* committed to source control.
 * Reference `Iconistic` plus any `Iconistic.<Pack>` packages. The generator emits a strongly-typed
   class per pack (e.g. `Feather`) with a member per icon (e.g. `Feather.Activity`).
+
 
 ## Delivery
 
@@ -27,6 +29,7 @@ directory and the generated API additionally exposes file paths (`Feather.Activi
   <IconisticExtractDisk>true</IconisticExtractDisk>
 </PropertyGroup>
 ```
+
 
 ## Usage
 
@@ -51,6 +54,7 @@ using var stream = icon.OpenStream(); // UTF-8 stream of the SVG
 <sup><a href='/src/Tests/Snippets.cs#L6-L12' title='Snippet source file'>snippet source</a> | <a href='#snippet-RuntimeUsage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+
 ## Blazor
 
 ```razor
@@ -62,6 +66,7 @@ using var stream = icon.OpenStream(); // UTF-8 stream of the SVG
 The `<Iconify>` component renders the icon as an inline `<svg>` (extra attributes like `class`/`style`
 are splatted onto it). There is also an `Icon.ToMarkup()` extension returning a `MarkupString`.
 
+
 ## Building locally
 
 ```
@@ -71,6 +76,9 @@ dotnet build IntegrationTests -c Release
 dotnet build sample -c Release
 ```
 
-## License
 
-MIT
+## Icon
+
+[Pattern](https://thenounproject.com/icon/pattern-42427/) designed by [gira Park](https://thenounproject.com/creator/gila.bag) from [The Noun Project](https://thenounproject.com).
+
+
