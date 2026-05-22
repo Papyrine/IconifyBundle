@@ -11,6 +11,8 @@
 
   <ItemGroup>
     <PackageReference Include="TUnit" />
+    <!-- The direct Iconistic reference brings the path-extension generator (analyzers are not
+         transitive); Iconistic.Feather carries the precompiled icon API. -->
     <PackageReference Include="Iconistic" />
     <PackageReference Include="Iconistic.Feather" />
   </ItemGroup>

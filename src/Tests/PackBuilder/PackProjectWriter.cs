@@ -70,9 +70,11 @@ static class PackProjectWriter
             writer.WriteEndObject();
         }
 
-        var marker = $"IconisticPacks.{pascal}Pack";
-        File.WriteAllText(Path.Combine(packDir, $"{prefix}.manifest"), BuildManifest(prefix, pascal, marker, names));
-        File.WriteAllText(Path.Combine(packDir, "Pack.cs"), BuildMarker(pascal));
+        var manifestText = BuildManifest(prefix, pascal, names);
+        File.WriteAllText(Path.Combine(packDir, $"{prefix}.manifest"), manifestText);
+        // The strongly-typed pack class is compiled into the pack assembly (was previously emitted by the
+        // source generator in each consumer); the manifest is still shipped for the path-extension generator.
+        File.WriteAllText(Path.Combine(packDir, $"{pascal}.cs"), Emitter.EmitPackClass(Manifest.Parse(prefix, manifestText)));
         File.WriteAllText(Path.Combine(buildDir, $"{packageId}.props"), BuildProps(prefix));
         File.WriteAllText(Path.Combine(buildDir, $"{packageId}.targets"), BuildTargets(prefix));
 
@@ -82,15 +84,14 @@ static class PackProjectWriter
         return new(prefix, packageId, csprojPath, names.Count);
     }
 
-    static string BuildManifest(string prefix, string pascal, string marker, List<string> names)
+    static string BuildManifest(string prefix, string pascal, List<string> names)
     {
         var builder = new StringBuilder(
             $"""
              prefix={prefix}
              class={pascal}
-             marker={marker}
-
              """);
+        builder.Append("\n\n");
         foreach (var name in names)
         {
             builder.Append(name).Append('\n');
@@ -98,16 +99,6 @@ static class PackProjectWriter
 
         return builder.ToString();
     }
-
-    static string BuildMarker(string pascal) =>
-        $$"""
-          namespace IconisticPacks;
-
-          /// <summary>Marker type used by Iconistic to locate this pack assembly.</summary>
-          public static class {{pascal}}Pack
-          {
-          }
-          """;
 
     static string BuildProps(string prefix) =>
         $"""
@@ -162,7 +153,7 @@ static class PackProjectWriter
                 <Project Sdk="Microsoft.NET.Sdk">
 
                   <PropertyGroup>
-                    <TargetFramework>netstandard2.0</TargetFramework>
+                    <TargetFramework>net8.0</TargetFramework>
                     <LangVersion>latest</LangVersion>
                     <Nullable>enable</Nullable>
                     <ImplicitUsings>enable</ImplicitUsings>
@@ -179,6 +170,11 @@ static class PackProjectWriter
                     <GenerateDocumentationFile>false</GenerateDocumentationFile>
                     <NoWarn>$(NoWarn);NU5128</NoWarn>
                   </PropertyGroup>
+
+                  <ItemGroup>
+                    <!-- The compiled pack class returns Iconistic.Icon and uses Iconistic.IconPack. -->
+                    <PackageReference Include="Iconistic" Version="{RepoPaths.Version}" />
+                  </ItemGroup>
 
                   <ItemGroup>
                     <EmbeddedResource Include="iconistic.pack.json" LogicalName="iconistic.pack.json" />

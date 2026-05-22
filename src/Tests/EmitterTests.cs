@@ -6,30 +6,30 @@ public class EmitterTests
             """
             prefix=feather
             class=Feather
-            marker=IconisticPacks.FeatherPack
 
             activity
             alert-circle
             """);
 
     [Test]
-    public async Task Emits_stream_surface_by_default()
+    public async Task Pack_class_has_icon_members()
     {
-        var source = Emitter.Emit(Sample(), diskMode: false);
+        var source = Emitter.EmitPackClass(Sample());
 
-        await Assert.That(source.Contains("public static partial class Feather")).IsTrue();
-        await Assert.That(source.Contains("ForAssembly(typeof(global::IconisticPacks.FeatherPack).Assembly, \"feather\")")).IsTrue();
+        await Assert.That(source.Contains("public static class Feather")).IsTrue();
+        await Assert.That(source.Contains("ForAssembly(typeof(Feather).Assembly, \"feather\")")).IsTrue();
         await Assert.That(source.Contains("public static global::Iconistic.Icon Activity => pack[\"activity\"];")).IsTrue();
         await Assert.That(source.Contains("AlertCircle => pack[\"alert-circle\"];")).IsTrue();
-        await Assert.That(source.Contains("PathOf")).IsFalse();
+        await Assert.That(source.Contains("public static string PathOf(string name) => pack.PathOf(name);")).IsTrue();
     }
 
     [Test]
-    public async Task Extract_disk_also_emits_path_surface()
+    public async Task Path_extensions_target_the_pack_class()
     {
-        var source = Emitter.Emit(Sample(), diskMode: true);
+        var source = Emitter.EmitPathExtensions(Sample());
 
-        await Assert.That(source.Contains("public static string ActivityPath => pack.PathOf(\"activity\");")).IsTrue();
+        await Assert.That(source.Contains("extension(global::Iconistic.Feather)")).IsTrue();
+        await Assert.That(source.Contains("public static string ActivityPath => global::Iconistic.Feather.PathOf(\"activity\");")).IsTrue();
     }
 
     [Test]
@@ -40,12 +40,11 @@ public class EmitterTests
             """
             prefix=feather
             class=Feather
-            marker=IconisticPacks.FeatherPack
 
             feather
             """);
 
-        var source = Emitter.Emit(manifest, diskMode: false);
+        var source = Emitter.EmitPackClass(manifest);
 
         // The icon "feather" would collide with class "Feather"; it must be renamed.
         await Assert.That(source.Contains("Icon FeatherIcon => pack[\"feather\"];")).IsTrue();

@@ -11,22 +11,30 @@ static class GeneratorRunner
         string? manifest,
         string prefix = "feather",
         bool diskMode = false,
-        bool includeMarker = true)
+        bool includePackClass = true)
     {
+        var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
+
         var sources = new List<SyntaxTree>
         {
-            CSharpSyntaxTree.ParseText("public class Dummy;")
+            CSharpSyntaxTree.ParseText("public class Dummy;", parseOptions)
         };
 
-        if (includeMarker)
+        if (includePackClass)
         {
-            var markerClass = IdentifierNaming.ToPascalCase(prefix) + "Pack";
+            // Stand-in for the pack class compiled into Iconistic.<Pack>.dll; the generated path
+            // extensions target it via Feather.PathOf(...).
+            var className = IdentifierNaming.ToPascalCase(prefix);
             sources.Add(
                 CSharpSyntaxTree.ParseText(
-                    $"""
-                     namespace IconisticPacks;
-                     public static class {markerClass};
-                     """));
+                    $$"""
+                      namespace Iconistic;
+                      public static class {{className}}
+                      {
+                          public static string PathOf(string name) => name;
+                      }
+                      """,
+                    parseOptions));
         }
 
         var references = ((string) AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
@@ -49,7 +57,7 @@ static class GeneratorRunner
         var driver = CSharpGeneratorDriver.Create(
             generators: [new IconisticGenerator().AsSourceGenerator()],
             additionalTexts: additionalTexts,
-            parseOptions: null,
+            parseOptions: parseOptions,
             optionsProvider: new TestOptionsProvider(diskMode, prefix));
 
         var runResult = driver

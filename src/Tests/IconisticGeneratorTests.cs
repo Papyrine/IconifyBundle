@@ -4,7 +4,6 @@ public class IconisticGeneratorTests
         """
         prefix=feather
         class=Feather
-        marker=IconisticPacks.FeatherPack
 
         activity
         alert-circle
@@ -14,31 +13,27 @@ public class IconisticGeneratorTests
     [Test]
     public async Task No_manifest_generates_nothing()
     {
-        var result = GeneratorRunner.Run(manifest: null);
+        var result = GeneratorRunner.Run(manifest: null, diskMode: true);
         await Assert.That(result.GeneratedSources.Length).IsEqualTo(0);
     }
 
     [Test]
-    public async Task Resource_mode_generates_compiling_api()
+    public async Task Without_extract_disk_generates_nothing()
     {
-        var result = GeneratorRunner.Run(featherManifest);
-
-        await Assert.That(result.CompileErrors.Length).IsEqualTo(0);
-        var source = result.Single()!;
-        await Assert.That(source.Contains("public static partial class Feather")).IsTrue();
-        await Assert.That(source.Contains("Icon Activity => pack[\"activity\"];")).IsTrue();
-        await Assert.That(source.Contains("Icon AlertCircle => pack[\"alert-circle\"];")).IsTrue();
-        await Assert.That(source.Contains("Icon _1password => pack[\"1password\"];")).IsTrue();
-        await Assert.That(source.Contains("ForAssembly(typeof(global::IconisticPacks.FeatherPack).Assembly, \"feather\")")).IsTrue();
+        // The icon API is compiled into the pack assembly; the generator only adds path members.
+        var result = GeneratorRunner.Run(featherManifest, diskMode: false);
+        await Assert.That(result.GeneratedSources.Length).IsEqualTo(0);
     }
 
     [Test]
-    public async Task Disk_mode_generates_path_members_that_compile()
+    public async Task Extract_disk_generates_compiling_path_extensions()
     {
         var result = GeneratorRunner.Run(featherManifest, diskMode: true);
 
         await Assert.That(result.CompileErrors.Length).IsEqualTo(0);
         var source = result.Single()!;
-        await Assert.That(source.Contains("string ActivityPath => pack.PathOf(\"activity\");")).IsTrue();
+        await Assert.That(source.Contains("extension(global::Iconistic.Feather)")).IsTrue();
+        await Assert.That(source.Contains("string ActivityPath => global::Iconistic.Feather.PathOf(\"activity\");")).IsTrue();
+        await Assert.That(source.Contains("string _1passwordPath => global::Iconistic.Feather.PathOf(\"1password\");")).IsTrue();
     }
 }

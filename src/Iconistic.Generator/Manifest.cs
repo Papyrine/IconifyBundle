@@ -9,25 +9,22 @@ public sealed class Manifest : IEquatable<Manifest>
 {
     public string Prefix { get; }
     public string ClassName { get; }
-    public string MarkerType { get; }
     public IReadOnlyList<string> IconNames { get; }
 
-    Manifest(string prefix, string className, string markerType, IReadOnlyList<string> iconNames)
+    Manifest(string prefix, string className, IReadOnlyList<string> iconNames)
     {
         Prefix = prefix;
         ClassName = className;
-        MarkerType = markerType;
         IconNames = iconNames;
     }
 
     /// <summary>
     /// Manifest format: <c>key=value</c> header lines, a blank line, then one icon name per line.
-    /// Supported headers: <c>prefix</c>, <c>class</c>, <c>marker</c>.
+    /// Supported headers: <c>prefix</c>, <c>class</c>.
     /// </summary>
     public static Manifest Parse(string prefix, string content)
     {
         string? className = null;
-        string? markerType = null;
         var names = new List<string>();
         var inHeader = true;
 
@@ -60,9 +57,6 @@ public sealed class Manifest : IEquatable<Manifest>
                         case "class":
                             className = value;
                             break;
-                        case "marker":
-                            markerType = value;
-                            break;
                     }
 
                     continue;
@@ -81,8 +75,7 @@ public sealed class Manifest : IEquatable<Manifest>
         }
 
         className ??= IdentifierNaming.ToPascalCase(prefix);
-        markerType ??= "IconisticPacks." + className + "Pack";
-        return new(prefix, className, markerType, names);
+        return new(prefix, className, names);
     }
 
     public bool Equals(Manifest? other)
@@ -94,7 +87,6 @@ public sealed class Manifest : IEquatable<Manifest>
 
         if (Prefix != other.Prefix ||
             ClassName != other.ClassName ||
-            MarkerType != other.MarkerType ||
             IconNames.Count != other.IconNames.Count)
         {
             return false;

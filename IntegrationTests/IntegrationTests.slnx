@@ -1,4 +1,9 @@
 <Solution>
   <Project Path="IntegrationTests/IntegrationTests.csproj" />
+  <Folder Name="/SolutionItems/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="nuget.config" />
+  </Folder>
   <Project Path="DiskModeConsumer/DiskModeConsumer.csproj" />
 </Solution>

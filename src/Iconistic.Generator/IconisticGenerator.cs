@@ -3,10 +3,10 @@ using Microsoft.CodeAnalysis;
 namespace Iconistic.Generator;
 
 /// <summary>
-/// Emits a strongly-typed API for every referenced <c>Iconistic.&lt;Pack&gt;</c> NuGet. For each
-/// pack manifest (an <c>AdditionalFiles</c> entry tagged with <c>IconisticPack</c> metadata) a
-/// <c>public static partial class</c> is generated under the <c>Iconistic</c> namespace with one
-/// member per icon. File-path members are additionally emitted when <c>IconisticExtractDisk</c> is set.
+/// The strongly-typed pack class (one member per icon) is compiled into each <c>Iconistic.&lt;Pack&gt;</c>
+/// assembly at pack time. This generator only adds the per-icon file-path members - as static extension
+/// properties on the pack class (e.g. <c>Feather.ActivityPath</c>) - and only when the consumer sets the
+/// <c>IconisticExtractDisk</c> MSBuild property.
 /// </summary>
 [Generator(LanguageNames.CSharp)]
 public class IconisticGenerator :
@@ -14,7 +14,7 @@ public class IconisticGenerator :
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var diskMode = context.AnalyzerConfigOptionsProvider.Select(
+        var extractDisk = context.AnalyzerConfigOptionsProvider.Select(
             (provider, _) =>
                 provider.GlobalOptions.TryGetValue("build_property.IconisticExtractDisk", out var value) &&
                 string.Equals(value, "true", StringComparison.OrdinalIgnoreCase));
@@ -42,14 +42,18 @@ public class IconisticGenerator :
             .Where(static manifest => manifest is not null)
             .Select(static (manifest, _) => manifest!);
 
-        var combined = manifests.Combine(diskMode);
+        var combined = manifests.Combine(extractDisk);
         context.RegisterSourceOutput(
             combined,
             static (productionContext, pair) =>
             {
                 var (manifest, disk) = pair;
-                var source = Emitter.Emit(manifest, disk);
-                productionContext.AddSource($"{manifest.ClassName}.g.cs", source);
+                if (!disk)
+                {
+                    return;
+                }
+
+                productionContext.AddSource($"{manifest.ClassName}.Paths.g.cs", Emitter.EmitPathExtensions(manifest));
             });
     }
 }

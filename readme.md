@@ -1,17 +1,18 @@
 # Iconistic
 
-Strongly-typed [Iconify](https://iconify.design/) icons for .NET, with a Roslyn source generator,
-two delivery modes (embedded **Resource** or on-disk **Disk**), and Blazor helpers.
+Strongly-typed [Iconify](https://iconify.design/) icons for .NET, with optional on-disk extraction
+and Blazor helpers.
 
 
 ## How it works
 
-* **`Iconistic`** — the core runtime plus the source generator (shipped together).
-* **`Iconistic.<Pack>`** — one NuGet per Iconify pack (e.g. `Iconistic.Feather`). These packages are
-  produced on demand by the `PackBuilder` test, which downloads each pack from the Iconify data and
-  packs it. They are *not* committed to source control.
-* Reference `Iconistic` plus any `Iconistic.<Pack>` packages. The generator emits a strongly-typed
-  class per pack (e.g. `Feather`) with a member per icon (e.g. `Feather.Activity`).
+* **`Iconistic`** — the core runtime (`Icon`, `IconPack`, `SvgBuilder`) plus a small source generator
+  used only for on-disk extraction (see below).
+* **`Iconistic.<Pack>`** — one NuGet per Iconify pack (e.g. `Iconistic.Feather`). Each pack ships a
+  precompiled, strongly-typed class (e.g. `Feather`) with a member per icon (e.g. `Feather.Activity`),
+  so a **single reference** to the pack suffices - it pulls the `Iconistic` runtime in
+  transitively. These packages are produced on demand by the `PackBuilder` test, which downloads each
+  pack from the Iconify data and packs it; they are *not* committed to source control.
 
 
 ## Delivery
@@ -30,6 +31,11 @@ directory and the generated API additionally exposes file paths (`Feather.Activi
 </PropertyGroup>
 ```
 
+The strongly-typed `Feather.ActivityPath` members are emitted as static extension properties by the
+generator, so for those a project also needs a direct `Iconistic` reference (analyzers don't flow
+transitively) and C# 14. `Feather.PathOf("activity")` is always available without either. The SVG
+files are copied to `iconistic/<prefix>/` under the output directory.
+
 
 ## Usage
 
@@ -47,7 +53,11 @@ The lower-level runtime API (the same `Icon` type the generated members return):
 <a id='snippet-RuntimeUsage'></a>
 ```cs
 // An Icon carries the inner SVG body and intrinsic size.
-var icon = new Icon("activity", "<path stroke=\"currentColor\" d=\"M12 2v20\"/>", 24, 24);
+var icon = new Icon(
+    "activity",
+    "<path stroke=\"currentColor\" d=\"M12 2v20\"/>",
+    24,
+    24);
 
 // full <svg> document
 var svg = icon.Svg;
@@ -55,7 +65,7 @@ var svg = icon.Svg;
 // UTF-8 stream of the SVG
 using var stream = icon.OpenStream();
 ```
-<sup><a href='/src/Tests/Snippets.cs#L6-L15' title='Snippet source file'>snippet source</a> | <a href='#snippet-RuntimeUsage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/Snippets.cs#L6-L19' title='Snippet source file'>snippet source</a> | <a href='#snippet-RuntimeUsage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 

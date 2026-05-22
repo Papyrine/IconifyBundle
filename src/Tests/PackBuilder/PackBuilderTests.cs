@@ -71,7 +71,7 @@ public class PackBuilderTests
         await Assert.That(entries).Contains($"build/{project.Prefix}.manifest");
         await Assert.That(entries).Contains($"build/{project.PackageId}.props");
         await Assert.That(entries).Contains($"build/{project.PackageId}.targets");
-        await Assert.That(entries).Contains($"lib/netstandard2.0/{project.PackageId}.dll");
+        await Assert.That(entries).Contains($"lib/net8.0/{project.PackageId}.dll");
         await Assert.That(entries.Any(_ => _.StartsWith("icons/") && _.EndsWith(".svg"))).IsTrue();
     }
 
@@ -100,6 +100,8 @@ public class PackBuilderTests
               <packageSources>
                 <clear />
                 <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+                <!-- The locally-built Iconistic runtime that each pack references. -->
+                <add key="local" value="..\nugets" />
               </packageSources>
             </configuration>
 

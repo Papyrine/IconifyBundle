@@ -3,14 +3,11 @@
 @* Renders an Iconistic <see cref="Icon"/> as an inline SVG. Extra attributes (class, style,
    aria-*, ...) are splatted onto the root <svg> element. *@
 
-@if (Value.Body is not null)
-{
-    <svg xmlns="http://www.w3.org/2000/svg"
-         width="@F(Width ?? Value.Width)"
-         height="@F(Height ?? Value.Height)"
-         viewBox="@($"0 0 {F(Value.Width)} {F(Value.Height)}")"
-         @attributes="AdditionalAttributes">@((MarkupString)Value.Body)</svg>
-}
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="@F(Width ?? Value.Width)"
+     height="@F(Height ?? Value.Height)"
+     viewBox="@($"0 0 {F(Value.Width)} {F(Value.Height)}")"
+     @attributes="AdditionalAttributes">@((MarkupString)Value.Body)</svg>
 
 @code {
 

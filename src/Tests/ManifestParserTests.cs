@@ -8,7 +8,6 @@ public class ManifestParserTests
             """
             prefix=feather
             class=Feather
-            marker=IconisticPacks.FeatherPack
 
             activity
             airplay
@@ -17,14 +16,13 @@ public class ManifestParserTests
 
         await Assert.That(manifest.Prefix).IsEqualTo("feather");
         await Assert.That(manifest.ClassName).IsEqualTo("Feather");
-        await Assert.That(manifest.MarkerType).IsEqualTo("IconisticPacks.FeatherPack");
         await Assert.That(manifest.IconNames.Count).IsEqualTo(3);
         await Assert.That(manifest.IconNames[0]).IsEqualTo("activity");
         await Assert.That(manifest.IconNames[2]).IsEqualTo("alert-circle");
     }
 
     [Test]
-    public async Task Defaults_class_and_marker_from_prefix()
+    public async Task Defaults_class_from_prefix()
     {
         var manifest = Manifest.Parse(
             "simple-icons",
@@ -35,7 +33,6 @@ public class ManifestParserTests
             """);
 
         await Assert.That(manifest.ClassName).IsEqualTo("SimpleIcons");
-        await Assert.That(manifest.MarkerType).IsEqualTo("IconisticPacks.SimpleIconsPack");
     }
 
     [Test]
