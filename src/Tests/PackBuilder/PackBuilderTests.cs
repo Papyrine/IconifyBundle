@@ -1,7 +1,11 @@
 public class PackBuilderTests
 {
+    // Explicit: builds every Iconify collection (slow, network-heavy). Run on demand / in CI via
+    //   Tests.exe --treenode-filter "/*/*/PackBuilderTests/*"
+    // rather than as part of the normal unit-test pass.
     [Test]
     [NotInParallel]
+    [Explicit]
     public async Task BuildPacks()
     {
         Directory.CreateDirectory(RepoPaths.Nugets);
