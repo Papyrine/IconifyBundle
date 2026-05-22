@@ -42,9 +42,10 @@ public static class Emitter
             .Append(manifest.Prefix)
             .Append("\");\n\n");
 
+        // No per-member XML doc comments: packs build with GenerateDocumentationFile=false (so docs are
+        // never emitted), and for the largest packs the comments double the source size and compile time.
         foreach (var (name, member) in Members(manifest))
         {
-            builder.Append("    /// <summary>The <c>").Append(manifest.Prefix).Append(':').Append(name).Append("</c> icon.</summary>\n");
             builder.Append("    public static global::Iconistic.Icon ").Append(member).Append(" => pack[\"").Append(Escape(name)).Append("\"];\n");
         }
 
@@ -78,7 +79,6 @@ public static class Emitter
         foreach (var (name, member) in members)
         {
             var pathMember = IdentifierNaming.Deduplicate(member + "Path", used);
-            builder.Append("        /// <summary>The on-disk path of the <c>").Append(manifest.Prefix).Append(':').Append(name).Append("</c> icon.</summary>\n");
             builder.Append("        public static string ").Append(pathMember)
                 .Append(" => global::Iconistic.").Append(manifest.ClassName).Append(".PathOf(\"").Append(Escape(name)).Append("\");\n");
         }

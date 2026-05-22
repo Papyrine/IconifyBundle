@@ -17,15 +17,20 @@ public class PackBuilderTests
         var prefixes = await PackSelection.ResolveAsync(cache);
         await Assert.That(prefixes.Count).IsGreaterThan(0);
 
-        // Generate every pack project on disk first...
-        var projects = new List<PackProjectWriter.PackProject>();
-        foreach (var prefix in prefixes)
-        {
-            Console.WriteLine(prefix);
-            await using var json = await cache.StreamAsync(
-                $"https://raw.githubusercontent.com/iconify/icon-sets/master/json/{prefix}.json");
-            projects.Add(PackProjectWriter.Write(prefix, json, RepoPaths.Packs));
-        }
+        // Generate every pack project on disk first (downloads + writing tens of thousands of SVGs, so
+        // run in parallel; each pack writes to its own directory).
+        var generated = new ConcurrentBag<PackProjectWriter.PackProject>();
+        await Parallel.ForEachAsync(
+            prefixes,
+            new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
+            async (prefix, token) =>
+            {
+                await using var json = await cache.StreamAsync(
+                    $"https://raw.githubusercontent.com/iconify/icon-sets/master/json/{prefix}.json", cancel: token);
+                generated.Add(PackProjectWriter.Write(prefix, json, RepoPaths.Packs));
+            });
+
+        var projects = generated.ToList();
 
         // ...then pack them all in a single solution build (one restore, projects packed in parallel).
         var solutionPath = Path.Combine(RepoPaths.Packs, "Packs.slnx");

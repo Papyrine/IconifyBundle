@@ -172,8 +172,9 @@ static class PackProjectWriter
                   </PropertyGroup>
 
                   <ItemGroup>
-                    <!-- The compiled pack class returns Iconistic.Icon and uses Iconistic.IconPack. -->
-                    <PackageReference Include="Iconistic" Version="{RepoPaths.Version}" />
+                    <!-- The compiled pack class returns Iconistic.Icon and uses Iconistic.IconPack.
+                         ExcludeAssets=analyzers: the pack doesn't need the generator running on itself. -->
+                    <PackageReference Include="Iconistic" Version="{RepoPaths.Version}" ExcludeAssets="analyzers" />
                   </ItemGroup>
 
                   <ItemGroup>
