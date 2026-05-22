@@ -84,17 +84,20 @@ static class PackProjectWriter
         File.WriteAllText(Path.Combine(buildDir, $"{packageId}.targets"), BuildTargets(prefix));
 
         var csprojPath = Path.Combine(packDir, $"{packageId}.csproj");
-        File.WriteAllText(csprojPath, BuildCsproj(packageId, prefix, pascal, root, names.Count));
+        File.WriteAllText(csprojPath, BuildCsproj(packageId, prefix, root, names.Count));
 
         return new(packageId, csprojPath, names.Count);
     }
 
     static string BuildManifest(string prefix, string pascal, string marker, List<string> names)
     {
-        var builder = new StringBuilder();
-        builder.Append("prefix=").Append(prefix).Append('\n');
-        builder.Append("class=").Append(pascal).Append('\n');
-        builder.Append("marker=").Append(marker).Append("\n\n");
+        var builder = new StringBuilder(
+            $"""
+             prefix={prefix}
+             class={pascal}
+             marker={marker}
+             """);
+        builder.Append("\n\n");
         foreach (var name in names)
         {
             builder.Append(name).Append('\n');
@@ -152,7 +155,7 @@ static class PackProjectWriter
                 """;
     }
 
-    static string BuildCsproj(string packageId, string prefix, string pascal, JsonElement root, int total)
+    static string BuildCsproj(string packageId, string prefix, JsonElement root, int total)
     {
         var name = packageId;
         string? author = null;
@@ -165,7 +168,8 @@ static class PackProjectWriter
                 name = n.GetString() ?? packageId;
             }
 
-            if (info.TryGetProperty("author", out var a) && a.TryGetProperty("name", out var an))
+            if (info.TryGetProperty("author", out var a) &&
+                a.TryGetProperty("name", out var an))
             {
                 author = an.GetString();
             }
@@ -195,7 +199,7 @@ static class PackProjectWriter
             : string.Empty;
         var authorLine = string.IsNullOrWhiteSpace(author)
             ? string.Empty
-            : $"    <Authors>{Escape(author!)}</Authors>\n";
+            : $"    <Authors>{Escape(author)}</Authors>\n";
 
         return $"""
                 <Project Sdk="Microsoft.NET.Sdk">
