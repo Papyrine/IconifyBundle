@@ -5,10 +5,17 @@ static class Snippets
     {
         #region RuntimeUsage
         // An Icon carries the inner SVG body and intrinsic size.
-        var icon = new Icon("activity", "<path stroke=\"currentColor\" d=\"M12 2v20\"/>", 24, 24);
+        var icon = new Icon(
+            "activity",
+            "<path stroke=\"currentColor\" d=\"M12 2v20\"/>",
+            24,
+            24);
 
-        var svg = icon.Svg;                   // full <svg> document
-        using var stream = icon.OpenStream(); // UTF-8 stream of the SVG
+        // full <svg> document
+        var svg = icon.Svg;
+
+        // UTF-8 stream of the SVG
+        using var stream = icon.OpenStream();
         #endregion
 
         Console.WriteLine(svg);

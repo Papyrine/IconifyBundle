@@ -36,7 +36,8 @@ directory and the generated API additionally exposes file paths (`Feather.Activi
 ```csharp
 Icon icon = Feather.Activity;
 
-string svg = icon.Svg;            // full <svg> document
+// full <svg> document
+string svg = icon.Svg;
 using Stream stream = icon.OpenStream();
 ```
 
@@ -48,10 +49,13 @@ The lower-level runtime API (the same `Icon` type the generated members return):
 // An Icon carries the inner SVG body and intrinsic size.
 var icon = new Icon("activity", "<path stroke=\"currentColor\" d=\"M12 2v20\"/>", 24, 24);
 
-var svg = icon.Svg;                   // full <svg> document
-using var stream = icon.OpenStream(); // UTF-8 stream of the SVG
+// full <svg> document
+var svg = icon.Svg;
+
+// UTF-8 stream of the SVG
+using var stream = icon.OpenStream();
 ```
-<sup><a href='/src/Tests/Snippets.cs#L6-L12' title='Snippet source file'>snippet source</a> | <a href='#snippet-RuntimeUsage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/Snippets.cs#L6-L15' title='Snippet source file'>snippet source</a> | <a href='#snippet-RuntimeUsage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 

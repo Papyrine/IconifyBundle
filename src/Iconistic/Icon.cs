@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Iconistic;
 
 /// <summary>
@@ -5,12 +7,17 @@ namespace Iconistic;
 /// (which uses <c>currentColor</c> so it inherits the surrounding text color), and the icon's
 /// intrinsic <see cref="Width"/>/<see cref="Height"/>.
 /// </summary>
-public readonly struct Icon(string name, string body, double width, double height)
+public readonly struct Icon(
+    string name,
+    [StringSyntax(StringSyntaxAttribute.Xml)] string body,
+    double width,
+    double height)
 {
     /// <summary>The icon name within its pack, e.g. <c>activity</c>.</summary>
     public string Name { get; } = name;
 
     /// <summary>The inner SVG markup (everything between the <c>&lt;svg&gt;</c> tags).</summary>
+    [StringSyntax(StringSyntaxAttribute.Xml)]
     public string Body { get; } = body;
 
     /// <summary>The intrinsic width used for the <c>viewBox</c> (may be fractional, e.g. <c>25.9</c>).</summary>
