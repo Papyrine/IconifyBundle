@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Text;
-
 namespace Iconistic.Generator;
 
 public static class Emitter
@@ -23,7 +20,7 @@ public static class Emitter
             .Append(diskMode ? "Disk" : "Resource")
             .Append(");\n\n");
 
-        var used = new HashSet<string>(System.StringComparer.Ordinal) { "pack" };
+        var used = new HashSet<string>(StringComparer.Ordinal) { "pack" };
         foreach (var name in manifest.IconNames)
         {
             var candidate = IdentifierNaming.ToPascalCase(name);

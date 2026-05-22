@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 static class PackSelection
 {
     // A small representative default: feather (286 icons) and lucide (1711 icons).

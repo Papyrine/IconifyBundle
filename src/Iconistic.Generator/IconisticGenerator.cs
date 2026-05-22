@@ -1,4 +1,3 @@
-using System;
 using Microsoft.CodeAnalysis;
 
 namespace Iconistic.Generator;
@@ -10,7 +9,8 @@ namespace Iconistic.Generator;
 /// member per icon. The shape of the API depends on the <c>IconisticMode</c> MSBuild property.
 /// </summary>
 [Generator(LanguageNames.CSharp)]
-public class IconisticGenerator : IIncrementalGenerator
+public class IconisticGenerator :
+    IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -37,7 +37,7 @@ public class IconisticGenerator : IIncrementalGenerator
                     return null;
                 }
 
-                return Manifest.Parse(prefix!, content);
+                return Manifest.Parse(prefix, content);
             })
             .Where(static manifest => manifest is not null)
             .Select(static (manifest, _) => manifest!);

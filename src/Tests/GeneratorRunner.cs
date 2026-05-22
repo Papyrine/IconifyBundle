@@ -21,11 +21,12 @@ static class GeneratorRunner
         if (includeMarker)
         {
             var markerClass = IdentifierNaming.ToPascalCase(prefix) + "Pack";
-            sources.Add(CSharpSyntaxTree.ParseText(
-                $$"""
-                  namespace IconisticPacks;
-                  public static class {{markerClass}};
-                  """));
+            sources.Add(
+                CSharpSyntaxTree.ParseText(
+                    $"""
+                     namespace IconisticPacks;
+                     public static class {markerClass};
+                     """));
         }
 
         var references = ((string) AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
@@ -78,7 +79,7 @@ static class GeneratorRunner
     {
         public override string Path { get; } = path;
 
-        public override SourceText GetText(CancellationToken cancellationToken = default) =>
+        public override SourceText GetText(Cancel cancel = default) =>
             SourceText.From(text);
     }
 

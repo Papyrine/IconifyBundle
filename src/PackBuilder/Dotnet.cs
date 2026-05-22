@@ -1,7 +1,3 @@
-using System.Diagnostics;
-
-namespace PackBuilder;
-
 static class Dotnet
 {
     public static async Task<(int ExitCode, string Output)> RunAsync(string arguments)

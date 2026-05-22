@@ -1,6 +1,6 @@
 public class IconisticGeneratorTests
 {
-    const string FeatherManifest =
+    const string featherManifest =
         """
         prefix=feather
         class=Feather
@@ -21,7 +21,7 @@ public class IconisticGeneratorTests
     [Test]
     public async Task Resource_mode_generates_compiling_api()
     {
-        var result = GeneratorRunner.Run(FeatherManifest);
+        var result = GeneratorRunner.Run(featherManifest);
 
         await Assert.That(result.CompileErrors.Length).IsEqualTo(0);
         var source = result.Single()!;
@@ -35,7 +35,7 @@ public class IconisticGeneratorTests
     [Test]
     public async Task Disk_mode_generates_path_members_that_compile()
     {
-        var result = GeneratorRunner.Run(FeatherManifest, diskMode: true);
+        var result = GeneratorRunner.Run(featherManifest, diskMode: true);
 
         await Assert.That(result.CompileErrors.Length).IsEqualTo(0);
         var source = result.Single()!;
