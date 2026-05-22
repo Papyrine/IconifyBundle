@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Iconistic.Web/Iconistic.Web.csproj" />
+  <Project Path="Iconistic.Web.Tests/Iconistic.Web.Tests.csproj" />
+</Solution>

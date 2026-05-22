@@ -1,0 +1,57 @@
+@namespace Iconistic.Web
+
+<header>
+    <h1>Iconistic</h1>
+    <p>Strongly-typed <a href="https://iconify.design/">Iconify</a> icons. Below is the Feather pack,
+       rendered via the generated API and the <code>&lt;Iconify&gt;</code> component.</p>
+</header>
+
+<main>
+    <div class="grid">
+        @foreach (var (name, icon) in Icons)
+        {
+            <figure class="cell" title="@name">
+                <Iconify Value="icon" Width="32" Height="32" />
+                <figcaption>@name</figcaption>
+            </figure>
+        }
+    </div>
+</main>
+
+@code {
+
+    static readonly (string Name, Icon Icon)[] Icons =
+    [
+        ("activity", Feather.Activity),
+        ("airplay", Feather.Airplay),
+        ("alert-circle", Feather.AlertCircle),
+        ("anchor", Feather.Anchor),
+        ("aperture", Feather.Aperture),
+        ("award", Feather.Award),
+        ("bell", Feather.Bell),
+        ("bookmark", Feather.Bookmark),
+        ("calendar", Feather.Calendar),
+        ("camera", Feather.Camera),
+        ("check-circle", Feather.CheckCircle),
+        ("clock", Feather.Clock),
+        ("cloud", Feather.Cloud),
+        ("coffee", Feather.Coffee),
+        ("compass", Feather.Compass),
+        ("download", Feather.Download),
+        ("edit", Feather.Edit),
+        ("eye", Feather.Eye),
+        ("feather", Feather.FeatherIcon),
+        ("github", Feather.Github),
+        ("heart", Feather.Heart),
+        ("home", Feather.Home),
+        ("mail", Feather.Mail),
+        ("map", Feather.Map),
+        ("settings", Feather.Settings),
+        ("star", Feather.Star),
+        ("sun", Feather.Sun),
+        ("trash-2", Feather.Trash2),
+        ("user", Feather.User),
+        ("zap", Feather.Zap),
+    ];
+
+}

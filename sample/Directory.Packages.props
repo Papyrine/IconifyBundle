@@ -1,0 +1,29 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Iconistic packages (restored from the local ../nugets feed) -->
+    <PackageVersion Include="Iconistic" Version="1.0.0" />
+    <PackageVersion Include="Iconistic.Blazor" Version="1.0.0" />
+    <PackageVersion Include="Iconistic.Feather" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Blazor WebAssembly -->
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Tests -->
+    <PackageVersion Include="bunit" Version="2.7.2" />
+    <PackageVersion Include="NUnit" Version="4.6.1" />
+    <PackageVersion Include="NUnit3TestAdapter" Version="6.2.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
+    <PackageVersion Include="Microsoft.Playwright" Version="1.59.0" />
+  </ItemGroup>
+
+</Project>

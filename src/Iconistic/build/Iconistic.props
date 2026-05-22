@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+
+  <!-- Default to Resource mode unless the consumer overrides it. -->
+  <PropertyGroup>
+    <IconisticMode Condition="'$(IconisticMode)' == ''">Resource</IconisticMode>
+  </PropertyGroup>
+
+  <!-- Expose IconisticMode to the source generator as build_property.IconisticMode -->
+  <ItemGroup>
+    <CompilerVisibleProperty Include="IconisticMode" />
+  </ItemGroup>
+
+</Project>

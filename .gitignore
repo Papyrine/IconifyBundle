@@ -1,0 +1,31 @@
+## Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+
+## Locally built nuget packages, generated pack projects, and the Replicant download cache
+nugets/
+packs/
+.cache/
+
+## Verify
+*.received.*
+*.received/
+
+## Rider / VS / VS Code
+.vs/
+.idea/
+*.user
+*.suo
+.vscode/
+
+## Playwright
+**/playwright-report/
+**/test-results/
+
+## OS
+.DS_Store
+Thumbs.db
+.claude/settings.local.json

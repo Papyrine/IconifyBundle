@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <Description>Blazor helpers for Iconistic - render Iconify icons as inline SVG.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\readme.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+    <ProjectReference Include="..\Iconistic\Iconistic.csproj" />
+  </ItemGroup>
+
+</Project>

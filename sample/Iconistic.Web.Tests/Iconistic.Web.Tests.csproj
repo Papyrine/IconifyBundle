@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <BlazorPublishDir>$(MSBuildThisFileDirectory)bin\$(Configuration)\blazor-publish\</BlazorPublishDir>
+  </PropertyGroup>
+
+  <!-- Publish the WASM app so the Playwright snapshot test can serve the real output. -->
+  <Target Name="PublishBlazorForTests" AfterTargets="Build">
+    <MSBuild Projects="..\Iconistic.Web\Iconistic.Web.csproj"
+             Targets="Publish"
+             Properties="Configuration=$(Configuration);PublishDir=$(BlazorPublishDir)" />
+  </Target>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="bunit" />
+    <PackageReference Include="NUnit" />
+    <PackageReference Include="NUnit3TestAdapter" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.Playwright" />
+    <PackageReference Include="Iconistic.Blazor" />
+    <ProjectReference Include="..\Iconistic.Web\Iconistic.Web.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="NUnit.Framework" />
+    <Using Include="Bunit" />
+    <Using Include="Iconistic" />
+  </ItemGroup>
+
+</Project>

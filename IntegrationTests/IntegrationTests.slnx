@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="IntegrationTests/IntegrationTests.csproj" />
+  <Project Path="DiskModeConsumer/DiskModeConsumer.csproj" />
+</Solution>

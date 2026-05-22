@@ -1,0 +1,13 @@
+<Solution>
+  <Project Path="Iconistic/Iconistic.csproj" />
+  <Project Path="Iconistic.Generator/Iconistic.Generator.csproj" />
+  <Folder Name="/SolutionItems/">
+    <File Path="appveyor.yml" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="mdsnippets.json" />
+  </Folder>
+  <Project Path="Iconistic.Blazor/Iconistic.Blazor.csproj" />
+  <Project Path="Tests/Tests.csproj" />
+  <Project Path="PackBuilder/PackBuilder.csproj" />
+</Solution>

@@ -1,0 +1,13 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="TUnit" Version="1.45.22" />
+    <PackageVersion Include="Iconistic" Version="1.0.0" />
+    <PackageVersion Include="Iconistic.Feather" Version="1.0.0" />
+  </ItemGroup>
+
+</Project>
