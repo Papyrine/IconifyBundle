@@ -3,7 +3,7 @@
 /// </summary>
 static class PackProjectWriter
 {
-    public sealed record PackProject(string PackageId, string CsprojPath, int IconCount);
+    public sealed record PackProject(string Prefix, string PackageId, string CsprojPath, int IconCount);
 
     public static PackProject Write(string prefix, Stream json, string packsDir)
     {
@@ -79,7 +79,7 @@ static class PackProjectWriter
         var csprojPath = Path.Combine(packDir, $"{packageId}.csproj");
         File.WriteAllText(csprojPath, BuildCsproj(packageId, prefix, root, names.Count));
 
-        return new(packageId, csprojPath, names.Count);
+        return new(prefix, packageId, csprojPath, names.Count);
     }
 
     static string BuildManifest(string prefix, string pascal, string marker, List<string> names)

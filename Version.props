@@ -1,0 +1,15 @@
+<Project>
+
+  <!--
+    Single source of truth for the Iconistic package version. Imported by:
+      - src/Directory.Build.props            (stamps <Version> on the built packages)
+      - IntegrationTests/Directory.Packages.props and sample/Directory.Packages.props
+                                             (pins the Iconistic* PackageVersions they consume)
+    and read at runtime by the PackBuilder test (RepoPaths.Version) so generated pack packages match.
+    Bump the version here and everything stays aligned.
+  -->
+  <PropertyGroup>
+    <IconisticVersion>0.1.0</IconisticVersion>
+  </PropertyGroup>
+
+</Project>

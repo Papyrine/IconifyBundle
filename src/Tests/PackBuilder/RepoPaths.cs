@@ -1,3 +1,5 @@
+using System.Xml.Linq;
+
 static class RepoPaths
 {
     public static string Root { get; } = Find();
@@ -8,8 +10,27 @@ static class RepoPaths
 
     public static string Cache { get; } = Path.Combine(Root, ".cache");
 
-    /// <summary>The Iconistic package version that generated pack packages depend on.</summary>
-    public const string Version = "1.0.0";
+    /// <summary>
+    /// The version stamped on generated pack packages, read from the shared root <c>Version.props</c>
+    /// so packs stay aligned with the core Iconistic packages and the downstream consumers.
+    /// </summary>
+    public static string Version { get; } = ReadVersion();
+
+    static string ReadVersion()
+    {
+        var propsPath = Path.Combine(Root, "Version.props");
+        var version = XDocument.Load(propsPath)
+            .Descendants("IconisticVersion")
+            .FirstOrDefault()
+            ?.Value
+            .Trim();
+        if (string.IsNullOrEmpty(version))
+        {
+            throw new InvalidOperationException($"No <IconisticVersion> element found in {propsPath}.");
+        }
+
+        return version;
+    }
 
     static string Find()
     {

@@ -17,36 +17,58 @@ public class PackBuilderTests
         var prefixes = await PackSelection.ResolveAsync(cache);
         await Assert.That(prefixes.Count).IsGreaterThan(0);
 
+        // Generate every pack project on disk first...
+        var projects = new List<PackProjectWriter.PackProject>();
         foreach (var prefix in prefixes)
         {
             Console.WriteLine(prefix);
             await using var json = await cache.StreamAsync(
                 $"https://raw.githubusercontent.com/iconify/icon-sets/master/json/{prefix}.json");
-            var project = PackProjectWriter.Write(prefix, json, RepoPaths.Packs);
+            projects.Add(PackProjectWriter.Write(prefix, json, RepoPaths.Packs));
+        }
 
-            var result = await Dotnet.RunAsync(
-                $"pack \"{project.CsprojPath}\" -c Release -o \"{RepoPaths.Nugets}\" --nologo");
-            if (result.ExitCode != 0)
-            {
-                Console.WriteLine(result.Output);
-            }
+        // ...then pack them all in a single solution build (one restore, projects packed in parallel).
+        var solutionPath = Path.Combine(RepoPaths.Packs, "Packs.slnx");
+        File.WriteAllText(solutionPath, BuildSolution(projects));
 
-            await Assert.That(result.ExitCode).IsEqualTo(0);
+        var result = await Dotnet.RunAsync(
+            $"pack \"{solutionPath}\" -c Release -o \"{RepoPaths.Nugets}\" --nologo");
+        if (result.ExitCode != 0)
+        {
+            Console.WriteLine(result.Output);
+        }
 
+        await Assert.That(result.ExitCode).IsEqualTo(0);
+
+        foreach (var project in projects)
+        {
             var nupkg = Path.Combine(RepoPaths.Nugets, $"{project.PackageId}.{RepoPaths.Version}.nupkg");
             await Assert.That(File.Exists(nupkg)).IsTrue();
-            await AssertPackageContents(nupkg, prefix, project);
+            await AssertPackageContents(nupkg, project);
         }
     }
 
-    static async Task AssertPackageContents(string nupkg, string prefix, PackProjectWriter.PackProject project)
+    static string BuildSolution(IEnumerable<PackProjectWriter.PackProject> projects)
+    {
+        var builder = new StringBuilder("<Solution>\n");
+        foreach (var project in projects)
+        {
+            var relative = Path.GetRelativePath(RepoPaths.Packs, project.CsprojPath).Replace('\\', '/');
+            builder.Append("  <Project Path=\"").Append(relative).Append("\" />\n");
+        }
+
+        builder.Append("</Solution>\n");
+        return builder.ToString();
+    }
+
+    static async Task AssertPackageContents(string nupkg, PackProjectWriter.PackProject project)
     {
         await using var archive = await ZipFile.OpenReadAsync(nupkg);
         var entries = archive.Entries
             .Select(_ => _.FullName.Replace('\\', '/'))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        await Assert.That(entries).Contains($"build/{prefix}.manifest");
+        await Assert.That(entries).Contains($"build/{project.Prefix}.manifest");
         await Assert.That(entries).Contains($"build/{project.PackageId}.props");
         await Assert.That(entries).Contains($"build/{project.PackageId}.targets");
         await Assert.That(entries).Contains($"lib/netstandard2.0/{project.PackageId}.dll");
