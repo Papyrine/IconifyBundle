@@ -13,12 +13,13 @@ public class PackBuilderTests
         Directory.CreateDirectory(RepoPaths.Packs);
         WritePacksScaffolding();
 
-        using var cache = new HttpCache(RepoPaths.Cache);
+        await using var cache = new HttpCache(RepoPaths.Cache);
         var prefixes = await PackSelection.ResolveAsync(cache);
         await Assert.That(prefixes.Count).IsGreaterThan(0);
 
         foreach (var prefix in prefixes)
         {
+            Console.WriteLine(prefix);
             var json = await cache.StringAsync(
                 $"https://raw.githubusercontent.com/iconify/icon-sets/master/json/{prefix}.json");
             var project = PackProjectWriter.Write(prefix, json, RepoPaths.Packs);

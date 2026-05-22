@@ -3,8 +3,6 @@
 /// </summary>
 static class PackProjectWriter
 {
-    static readonly Regex SimpleSpdx = new("^[A-Za-z0-9.+-]+$", RegexOptions.Compiled);
-
     public sealed record PackProject(string PackageId, string CsprojPath, int IconCount);
 
     public static PackProject Write(string prefix, string json, string packsDir)
@@ -153,48 +151,15 @@ static class PackProjectWriter
     static string BuildCsproj(string packageId, string prefix, JsonElement root, int total)
     {
         var name = packageId;
-        string? author = null;
-        string? spdx = null;
-        string? licenseTitle = null;
         if (root.TryGetProperty("info", out var info))
         {
             if (info.TryGetProperty("name", out var n))
             {
                 name = n.GetString() ?? packageId;
             }
-
-            if (info.TryGetProperty("author", out var a) &&
-                a.TryGetProperty("name", out var an))
-            {
-                author = an.GetString();
-            }
-
-            if (info.TryGetProperty("license", out var lic))
-            {
-                if (lic.TryGetProperty("spdx", out var s))
-                {
-                    spdx = s.GetString();
-                }
-
-                if (lic.TryGetProperty("title", out var t))
-                {
-                    licenseTitle = t.GetString();
-                }
-            }
         }
 
         var description = $"{name} ({total} icons) for Iconistic.";
-        if (licenseTitle is not null)
-        {
-            description += $" License: {licenseTitle}.";
-        }
-
-        var licenseLine = spdx is not null && SimpleSpdx.IsMatch(spdx)
-            ? $"    <PackageLicenseExpression>{spdx}</PackageLicenseExpression>\n"
-            : string.Empty;
-        var authorLine = string.IsNullOrWhiteSpace(author)
-            ? string.Empty
-            : $"    <Authors>{Escape(author)}</Authors>\n";
 
         return $"""
                 <Project Sdk="Microsoft.NET.Sdk">
@@ -212,7 +177,9 @@ static class PackProjectWriter
                     <Description>{Escape(description)}</Description>
                     <PackageProjectUrl>https://iconify.design/</PackageProjectUrl>
                     <PackageTags>iconify;icons;svg;{prefix}</PackageTags>
-                {authorLine}{licenseLine}    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+                    <Authors>$(RepositoryUrlEx)/graphs/contributors</Authors>
+                    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+                    <GenerateDocumentationFile>false</GenerateDocumentationFile>
                     <NoWarn>$(NoWarn);NU5128</NoWarn>
                   </PropertyGroup>
 
