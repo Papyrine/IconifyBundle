@@ -29,7 +29,7 @@ public class PackBuilderTests
 
         // ...then pack them all in a single solution build (one restore, projects packed in parallel).
         var solutionPath = Path.Combine(RepoPaths.Packs, "Packs.slnx");
-        File.WriteAllText(solutionPath, BuildSolution(projects));
+        await File.WriteAllTextAsync(solutionPath, BuildSolution(projects));
 
         var result = await Dotnet.RunAsync(
             $"pack \"{solutionPath}\" -c Release -o \"{RepoPaths.Nugets}\" --nologo");
