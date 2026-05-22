@@ -5,8 +5,8 @@
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <!-- Disk mode: pack SVG files are copied to the build output and file-path members are generated. -->
-    <IconisticMode>Disk</IconisticMode>
+    <!-- Opt into copying the pack's SVG files to the build output + generating file-path members. -->
+    <IconisticExtractDisk>true</IconisticExtractDisk>
   </PropertyGroup>
 
   <ItemGroup>

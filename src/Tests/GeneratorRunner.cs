@@ -96,9 +96,9 @@ static class GeneratorRunner
     {
         public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value)
         {
-            if (key == "build_property.IconisticMode")
+            if (key == "build_property.IconisticExtractDisk")
             {
-                value = diskMode ? "Disk" : "Resource";
+                value = diskMode ? "true" : "false";
                 return true;
             }
 

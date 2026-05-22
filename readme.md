@@ -12,20 +12,21 @@ two delivery modes (embedded **Resource** or on-disk **Disk**), and Blazor helpe
 * Reference `Iconistic` plus any `Iconistic.<Pack>` packages. The generator emits a strongly-typed
   class per pack (e.g. `Feather`) with a member per icon (e.g. `Feather.Activity`).
 
-## Modes
+## Delivery
 
-Set via the `IconisticMode` MSBuild property (default `Resource`):
+By default, icon data is loaded from a resource embedded in the pack assembly, so the generated API
+exposes string/stream access with no files on disk (`Feather.Activity.Svg`,
+`Feather.Activity.OpenStream()`).
+
+To also copy the pack's `.svg` files into the build output (e.g. to serve them as static assets),
+set the `IconisticExtractDisk` MSBuild property. The pack's shipped SVGs are then copied to the output
+directory and the generated API additionally exposes file paths (`Feather.ActivityPath`):
 
 ```xml
 <PropertyGroup>
-  <IconisticMode>Disk</IconisticMode>
+  <IconisticExtractDisk>true</IconisticExtractDisk>
 </PropertyGroup>
 ```
-
-* **Resource** (default): pack data is loaded from resources embedded in the pack assembly. The
-  generated API exposes string/stream access (`Feather.Activity.Svg`, `Feather.Activity.OpenStream()`).
-* **Disk**: pack SVG files are additionally copied to the build output, and the generated API also
-  exposes file paths (`Feather.ActivityPath`).
 
 ## Usage
 

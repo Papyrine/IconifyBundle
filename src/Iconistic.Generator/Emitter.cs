@@ -16,9 +16,7 @@ public static class Emitter
             .Append(manifest.MarkerType)
             .Append(").Assembly, \"")
             .Append(manifest.Prefix)
-            .Append("\", global::Iconistic.IconisticMode.")
-            .Append(diskMode ? "Disk" : "Resource")
-            .Append(");\n\n");
+            .Append("\");\n\n");
 
         var used = new HashSet<string>(StringComparer.Ordinal) { "pack" };
         foreach (var name in manifest.IconNames)

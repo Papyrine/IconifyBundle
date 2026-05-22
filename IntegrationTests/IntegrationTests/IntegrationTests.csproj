@@ -5,7 +5,7 @@
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <!-- Default (Resource) mode: no IconisticMode set. -->
+    <!-- Default behavior: icons via embedded resource; IconisticExtractDisk not set. -->
   </PropertyGroup>
 
   <ItemGroup>

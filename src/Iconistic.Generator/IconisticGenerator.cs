@@ -6,7 +6,7 @@ namespace Iconistic.Generator;
 /// Emits a strongly-typed API for every referenced <c>Iconistic.&lt;Pack&gt;</c> NuGet. For each
 /// pack manifest (an <c>AdditionalFiles</c> entry tagged with <c>IconisticPack</c> metadata) a
 /// <c>public static partial class</c> is generated under the <c>Iconistic</c> namespace with one
-/// member per icon. The shape of the API depends on the <c>IconisticMode</c> MSBuild property.
+/// member per icon. File-path members are additionally emitted when <c>IconisticExtractDisk</c> is set.
 /// </summary>
 [Generator(LanguageNames.CSharp)]
 public class IconisticGenerator :
@@ -16,8 +16,8 @@ public class IconisticGenerator :
     {
         var diskMode = context.AnalyzerConfigOptionsProvider.Select(
             (provider, _) =>
-                provider.GlobalOptions.TryGetValue("build_property.IconisticMode", out var value) &&
-                string.Equals(value, "Disk", StringComparison.OrdinalIgnoreCase));
+                provider.GlobalOptions.TryGetValue("build_property.IconisticExtractDisk", out var value) &&
+                string.Equals(value, "true", StringComparison.OrdinalIgnoreCase));
 
         var manifests = context.AdditionalTextsProvider
             .Combine(context.AnalyzerConfigOptionsProvider)

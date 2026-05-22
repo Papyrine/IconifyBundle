@@ -21,7 +21,7 @@ static class PackProjectWriter
         Directory.CreateDirectory(iconsDir);
         Directory.CreateDirectory(buildDir);
 
-        using var document = JsonDocument.Parse(json); // UTF-8 stream parsed directly - no intermediate string
+        using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
         var defaultWidth = root.TryGetProperty("width", out var w) ? w.GetDouble() : 16;
         var defaultHeight = root.TryGetProperty("height", out var h) ? h.GetDouble() : 16;
@@ -89,8 +89,8 @@ static class PackProjectWriter
              prefix={prefix}
              class={pascal}
              marker={marker}
+
              """);
-        builder.Append("\n\n");
         foreach (var name in names)
         {
             builder.Append(name).Append('\n');
@@ -126,27 +126,24 @@ static class PackProjectWriter
 
          """;
 
-    static string BuildTargets(string prefix)
-    {
-        var safe = IdentifierNaming.ToPascalCase(prefix);
-        return $"""
-                <?xml version="1.0" encoding="utf-8"?>
-                <Project>
+    static string BuildTargets(string prefix) =>
+        $"""
+         <?xml version="1.0" encoding="utf-8"?>
+         <Project>
 
-                  <!-- In Disk mode, copy the pack's SVG files next to the build output. -->
-                  <Target Name="IconisticCopy{safe}Icons" BeforeTargets="Build" Condition="'$(IconisticMode)' == 'Disk'">
-                    <ItemGroup>
-                      <_Iconistic{safe}Svg Include="$(MSBuildThisFileDirectory)..\icons\*.svg" />
-                    </ItemGroup>
-                    <Copy SourceFiles="@(_Iconistic{safe}Svg)"
-                          DestinationFiles="@(_Iconistic{safe}Svg->'$(OutDir)iconistic\{prefix}\%(Filename)%(Extension)')"
-                          SkipUnchangedFiles="true" />
-                  </Target>
+           <!-- When the consumer sets IconisticExtractDisk, declare the pack's SVG files as
+                copy-to-output build assets and let MSBuild place them under the output directory. -->
+           <ItemGroup Condition="'$(IconisticExtractDisk)' == 'true'">
+             <None Include="$(MSBuildThisFileDirectory)..\icons\*.svg"
+                   Link="iconistic\{prefix}\%(Filename)%(Extension)"
+                   CopyToOutputDirectory="PreserveNewest"
+                   Visible="false"
+                   Pack="false" />
+           </ItemGroup>
 
-                </Project>
+         </Project>
 
-                """;
-    }
+         """;
 
     static string BuildCsproj(string packageId, string prefix, JsonElement root, int total)
     {
@@ -197,5 +194,8 @@ static class PackProjectWriter
     }
 
     static string Escape(string value) =>
-        value.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
+        value
+            .Replace("&", "&amp;")
+            .Replace("<", "&lt;")
+            .Replace(">", "&gt;");
 }

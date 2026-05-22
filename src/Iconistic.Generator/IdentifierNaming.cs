@@ -12,13 +12,8 @@ public static class IdentifierNaming
         var upperNext = true;
         foreach (var c in name)
         {
-            if (c is '-' or '_' or '.' or ' ' or '/' or ':' or '+')
-            {
-                upperNext = true;
-                continue;
-            }
-
-            if (!IsIdentifierPart(c))
+            if (c is '-' or '_' or '.' or ' ' or '/' or ':' or '+' ||
+                !IsIdentifierPart(c))
             {
                 upperNext = true;
                 continue;

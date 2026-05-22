@@ -2,8 +2,8 @@ namespace Iconistic;
 
 /// <summary>
 /// Runtime accessor for a single icon pack. Loads icon data from the <c>iconistic.pack.json</c>
-/// resource embedded in the <c>Iconistic.&lt;Pack&gt;</c> assembly, and (in <see cref="IconisticMode.Disk"/>)
-/// resolves on-disk SVG file paths. Instances are cached per pack assembly.
+/// resource embedded in the <c>Iconistic.&lt;Pack&gt;</c> assembly, and resolves on-disk SVG file
+/// paths (for packs whose consumer set <c>IconisticExtractDisk</c>). Instances are cached per pack assembly.
 /// </summary>
 public sealed class IconPack
 {
@@ -11,18 +11,14 @@ public sealed class IconPack
 
     readonly Lazy<IReadOnlyDictionary<string, IconData>> icons;
 
-    IconPack(Assembly assembly, string prefix, IconisticMode mode)
+    IconPack(Assembly assembly, string prefix)
     {
         Prefix = prefix;
-        Mode = mode;
         icons = new(() => Load(assembly));
     }
 
     /// <summary>The Iconify prefix for this pack, e.g. <c>feather</c>.</summary>
     public string Prefix { get; }
-
-    /// <summary>The delivery mode the pack was generated for.</summary>
-    public IconisticMode Mode { get; }
 
     /// <summary>All icon names available in the pack.</summary>
     public IEnumerable<string> Names => icons.Value.Keys;
@@ -31,8 +27,8 @@ public sealed class IconPack
     /// Gets (and caches) the pack accessor for the supplied pack <paramref name="assembly"/>.
     /// Called by the generated code via <c>typeof(...).Assembly</c>.
     /// </summary>
-    public static IconPack ForAssembly(Assembly assembly, string prefix, IconisticMode mode) =>
-        cache.GetOrAdd(assembly, _ => new(assembly, prefix, mode));
+    public static IconPack ForAssembly(Assembly assembly, string prefix) =>
+        cache.GetOrAdd(assembly, _ => new(assembly, prefix));
 
     /// <summary>Resolves a single icon by name.</summary>
     /// <exception cref="KeyNotFoundException">No icon with that name exists in the pack.</exception>
@@ -53,8 +49,8 @@ public sealed class IconPack
     public bool Contains(string name) => icons.Value.ContainsKey(name);
 
     /// <summary>
-    /// The on-disk path to the icon's <c>.svg</c> file, relative to the application base directory.
-    /// Only populated when the pack is consumed in <see cref="IconisticMode.Disk"/>.
+    /// The on-disk path to the icon's <c>.svg</c> file under the application base directory. The file
+    /// is present only when the consumer set <c>IconisticExtractDisk</c> to copy the pack's SVGs to output.
     /// </summary>
     public string PathOf(string name) =>
         Path.Combine(AppContext.BaseDirectory, "iconistic", Prefix, name + ".svg");
