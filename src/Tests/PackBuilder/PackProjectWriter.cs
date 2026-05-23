@@ -181,9 +181,9 @@ static class PackProjectWriter
                   <ItemGroup>
                     <EmbeddedResource Include="iconistic.pack.json" LogicalName="iconistic.pack.json" />
                     <None Include="{prefix}.manifest" Pack="true" PackagePath="build" />
-                    <None Include="build\{packageId}.props" Pack="true" PackagePath="build" />
-                    <None Include="build\{packageId}.targets" Pack="true" PackagePath="build" />
-                    <None Include="icons\*.svg" Pack="true" PackagePath="icons" />
+                    <None Include="build/{packageId}.props" Pack="true" PackagePath="build" />
+                    <None Include="build/{packageId}.targets" Pack="true" PackagePath="build" />
+                    <None Include="icons/*.svg" Pack="true" PackagePath="icons" />
                   </ItemGroup>
 
                 </Project>
