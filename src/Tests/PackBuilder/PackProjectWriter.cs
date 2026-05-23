@@ -168,7 +168,8 @@ static class PackProjectWriter
                     <Authors>$(RepositoryUrlEx)/graphs/contributors</Authors>
                     <PackageLicenseExpression>MIT</PackageLicenseExpression>
                     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-                    <NoWarn>$(NoWarn);NU5128</NoWarn>
+                    <!-- CS0108: an icon named e.g. "equals"/"gethashcode" yields a member that hides an object member. -->
+                    <NoWarn>$(NoWarn);NU5128;CS0108</NoWarn>
                   </PropertyGroup>
 
                   <ItemGroup>
