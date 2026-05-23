@@ -12,14 +12,14 @@ build_script:
 - dotnet build src --configuration Release
 # 2. Download icon packs (Replicant cached) and pack Iconistic.<Pack> nugets into nugets/
 #    (the explicit PackBuilderTests.BuildPacks test, run on its own via a filter)
-- src/Tests/bin/Release/net10.0/Tests --treenode-filter "/*/*/PackBuilderTests/*" --report-trx --report-trx-filename packbuilder.trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output packbuilder.cobertura.xml
+- src/Tests/bin/Release/net10.0/Tests --no-ansi --no-progress --treenode-filter "/*/*/PackBuilderTests/*" --report-trx --report-trx-filename packbuilder.trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output packbuilder.cobertura.xml
 # 3. Build the integration tests + sample (consume the freshly-built nugets from the local feed)
 - dotnet build IntegrationTests --configuration Release
 - dotnet build sample --configuration Release
 # 4. Run test suites
-- src/Tests/bin/Release/net10.0/Tests --report-trx --report-trx-filename unit.trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output unit.cobertura.xml
-- IntegrationTests/IntegrationTests/bin/Release/net10.0/IntegrationTests --report-trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output integration.cobertura.xml
-- IntegrationTests/DiskModeConsumer/bin/Release/net10.0/DiskModeConsumer --report-trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output disk.cobertura.xml
+- src/Tests/bin/Release/net10.0/Tests --no-ansi --no-progress --report-trx --report-trx-filename unit.trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output unit.cobertura.xml
+- IntegrationTests/IntegrationTests/bin/Release/net10.0/IntegrationTests --no-ansi --no-progress --report-trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output integration.cobertura.xml
+- IntegrationTests/DiskModeConsumer/bin/Release/net10.0/DiskModeConsumer --no-ansi --no-progress --report-trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output disk.cobertura.xml
 - pwsh: sample/Iconistic.Web.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
 - dotnet test sample/Iconistic.Web.Tests --configuration Release --no-build --results-directory TestResults --logger trx
 on_finish:
