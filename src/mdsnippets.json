@@ -3,5 +3,6 @@
   "TocExcludes": [ "NuGet packages", "Release Notes", "Icon" ],
   "MaxWidth": 100,
   "ValidateContent": true,
-  "Convention": "InPlaceOverwrite"
+  "Convention": "InPlaceOverwrite",
+  "ExcludeDirectories": [ "packs", "nugets", ".cache" ]
 }
