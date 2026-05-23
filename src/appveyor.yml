@@ -1,34 +1,35 @@
-image:
-- Visual Studio 2022
+image: Ubuntu
 environment:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
 build_script:
-- appveyor DownloadFile https://dot.net/v1/dotnet-install.ps1
-- pwsh: ./dotnet-install.ps1 -JSonFile global.json -Architecture x64 -InstallDir 'C:\Program Files\dotnet'
+- pwsh: |
+    Invoke-WebRequest "https://dot.net/v1/dotnet-install.sh" -OutFile "./dotnet-install.sh"
+    sudo chmod u+x dotnet-install.sh
+    sudo ./dotnet-install.sh --jsonfile global.json --architecture x64 --install-dir '/usr/share/dotnet'
 # 1. Build core: produces Iconistic + Iconistic.Blazor nupkgs in nugets/
 - dotnet build src --configuration Release
 # 2. Download icon packs (Replicant cached) and pack Iconistic.<Pack> nugets into nugets/
 #    (the explicit PackBuilderTests.BuildPacks test, run on its own via a filter)
-- src\Tests\bin\Release\net10.0\Tests.exe --treenode-filter "/*/*/PackBuilderTests/*" --report-trx --report-trx-filename packbuilder.trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output packbuilder.cobertura.xml
+- src/Tests/bin/Release/net10.0/Tests --treenode-filter "/*/*/PackBuilderTests/*" --report-trx --report-trx-filename packbuilder.trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output packbuilder.cobertura.xml
 # 3. Build the integration tests + sample (consume the freshly-built nugets from the local feed)
 - dotnet build IntegrationTests --configuration Release
 - dotnet build sample --configuration Release
 # 4. Run test suites
-- src\Tests\bin\Release\net10.0\Tests.exe --report-trx --report-trx-filename unit.trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output unit.cobertura.xml
-- IntegrationTests\IntegrationTests\bin\Release\net10.0\IntegrationTests.exe --report-trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output integration.cobertura.xml
-- IntegrationTests\DiskModeConsumer\bin\Release\net10.0\DiskModeConsumer.exe --report-trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output disk.cobertura.xml
-- pwsh: sample\Iconistic.Web.Tests\bin\Release\net10.0\playwright.ps1 install chromium
-- dotnet test sample\Iconistic.Web.Tests --configuration Release --no-build --results-directory TestResults --logger trx
+- src/Tests/bin/Release/net10.0/Tests --report-trx --report-trx-filename unit.trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output unit.cobertura.xml
+- IntegrationTests/IntegrationTests/bin/Release/net10.0/IntegrationTests --report-trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output integration.cobertura.xml
+- IntegrationTests/DiskModeConsumer/bin/Release/net10.0/DiskModeConsumer --report-trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output disk.cobertura.xml
+- pwsh: sample/Iconistic.Web.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+- dotnet test sample/Iconistic.Web.Tests --configuration Release --no-build --results-directory TestResults --logger trx
 on_finish:
-- ps: |
-    Get-ChildItem TestResults\*.trx -ErrorAction SilentlyContinue | % {
+- pwsh: |
+    Get-ChildItem TestResults/*.trx -ErrorAction SilentlyContinue | % {
       (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/mstest/$($env:APPVEYOR_JOB_ID)", $_.FullName)
     }
-    Get-ChildItem TestResults\*.cobertura.xml -ErrorAction SilentlyContinue | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
+    Get-ChildItem TestResults/*.cobertura.xml -ErrorAction SilentlyContinue | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
 on_failure:
-- ps: |
+- pwsh: |
     $root = (Get-Location).Path
     Get-ChildItem *.received.* -Recurse | % {
       $rel = $_.FullName.Substring($root.Length + 1)
@@ -36,5 +37,5 @@ on_failure:
     }
 test: off
 artifacts:
-- path: nugets\*.nupkg
-- path: TestResults\*.cobertura.xml
+- path: nugets/*.nupkg
+- path: TestResults/*.cobertura.xml
