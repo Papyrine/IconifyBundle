@@ -24,12 +24,15 @@ public class PackBuilderTests
         var done = 0;
         await Parallel.ForEachAsync(
             prefixes,
-            new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
+            new ParallelOptions
+            {
+                MaxDegreeOfParallelism = Environment.ProcessorCount
+            },
             async (prefix, token) =>
             {
                 await using var json = await cache.StreamAsync(
                     $"https://raw.githubusercontent.com/iconify/icon-sets/master/json/{prefix}.json", cancel: token);
-                var project = PackProjectWriter.Write(prefix, json, RepoPaths.Packs);
+                var project = await PackProjectWriter.Write(prefix, json, RepoPaths.Packs);
                 generated.Add(project);
                 Log.Line($"[{Interlocked.Increment(ref done)}/{prefixes.Count}] generated {prefix} ({project.IconCount} icons)");
             });
