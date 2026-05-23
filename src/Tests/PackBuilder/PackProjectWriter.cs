@@ -70,16 +70,22 @@ static class PackProjectWriter
             writer.WriteEndObject();
         }
 
+        var displayName = root.TryGetProperty("info", out var info) &&
+                          info.TryGetProperty("name", out var infoName)
+            ? infoName.GetString() ?? packageId
+            : packageId;
+
         var manifestText = BuildManifest(prefix, pascal, names);
         File.WriteAllText(Path.Combine(packDir, $"{prefix}.manifest"), manifestText);
         // The strongly-typed pack class is compiled into the pack assembly (was previously emitted by the
         // source generator in each consumer); the manifest is still shipped for the path-extension generator.
         File.WriteAllText(Path.Combine(packDir, $"{pascal}.cs"), Emitter.EmitPackClass(Manifest.Parse(prefix, manifestText)));
+        File.WriteAllText(Path.Combine(packDir, "readme.md"), BuildReadme(packageId, pascal, displayName, names.Count));
         File.WriteAllText(Path.Combine(buildDir, $"{packageId}.props"), BuildProps(prefix));
         File.WriteAllText(Path.Combine(buildDir, $"{packageId}.targets"), BuildTargets(prefix));
 
         var csprojPath = Path.Combine(packDir, $"{packageId}.csproj");
-        File.WriteAllText(csprojPath, BuildCsproj(packageId, prefix, root, names.Count));
+        File.WriteAllText(csprojPath, BuildCsproj(packageId, prefix, displayName, names.Count));
 
         return new(prefix, packageId, csprojPath, names.Count);
     }
@@ -136,18 +142,25 @@ static class PackProjectWriter
 
          """;
 
-    static string BuildCsproj(string packageId, string prefix, JsonElement root, int total)
-    {
-        var name = packageId;
-        if (root.TryGetProperty("info", out var info))
-        {
-            if (info.TryGetProperty("name", out var n))
-            {
-                name = n.GetString() ?? packageId;
-            }
-        }
+    static string BuildReadme(string packageId, string pascal, string displayName, int total) =>
+        $"""
+         # {packageId}
 
-        var description = $"{name} ({total} icons) for Iconistic.";
+         {displayName} ({total} icons) for [Iconistic](https://github.com/SimonCropp/Iconistic) -
+         strongly-typed [Iconify](https://iconify.design/) icons for .NET.
+
+         ```csharp
+         Icon icon = {pascal}.SomeIcon;
+         string svg = icon.Svg;
+         ```
+
+         A single reference to this package gives the strongly-typed `{pascal}` class with a member per icon.
+
+         """;
+
+    static string BuildCsproj(string packageId, string prefix, string displayName, int total)
+    {
+        var description = $"{displayName} ({total} icons) for Iconistic.";
 
         return $"""
                 <Project Sdk="Microsoft.NET.Sdk">
@@ -167,6 +180,7 @@ static class PackProjectWriter
                     <PackageTags>iconify;icons;svg;{prefix}</PackageTags>
                     <Authors>$(RepositoryUrlEx)/graphs/contributors</Authors>
                     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+                    <PackageReadmeFile>readme.md</PackageReadmeFile>
                     <GenerateDocumentationFile>false</GenerateDocumentationFile>
                     <!-- CS0108: an icon named e.g. "equals"/"gethashcode" yields a member that hides an object member. -->
                     <NoWarn>$(NoWarn);NU5128;CS0108</NoWarn>
@@ -180,6 +194,7 @@ static class PackProjectWriter
 
                   <ItemGroup>
                     <EmbeddedResource Include="iconistic.pack.json" LogicalName="iconistic.pack.json" />
+                    <None Include="readme.md" Pack="true" PackagePath="\" />
                     <None Include="{prefix}.manifest" Pack="true" PackagePath="build" />
                     <None Include="build/{packageId}.props" Pack="true" PackagePath="build" />
                     <None Include="build/{packageId}.targets" Pack="true" PackagePath="build" />
