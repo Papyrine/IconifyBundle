@@ -125,8 +125,8 @@ static class PackProjectWriter
            <!-- When the consumer sets IconisticExtractDisk, declare the pack's SVG files as
                 copy-to-output build assets and let MSBuild place them under the output directory. -->
            <ItemGroup Condition="'$(IconisticExtractDisk)' == 'true'">
-             <None Include="$(MSBuildThisFileDirectory)..\icons\*.svg"
-                   Link="iconistic\{prefix}\%(Filename)%(Extension)"
+             <None Include="$(MSBuildThisFileDirectory)../icons/*.svg"
+                   Link="iconistic/{prefix}/%(Filename)%(Extension)"
                    CopyToOutputDirectory="PreserveNewest"
                    Visible="false"
                    Pack="false" />
