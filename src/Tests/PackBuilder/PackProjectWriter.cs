@@ -22,9 +22,7 @@ static class PackProjectWriter
             Directory.Delete(packDir, recursive: true);
         }
 
-        var iconsDir = Path.Combine(packDir, "icons");
         var buildDir = Path.Combine(packDir, "build");
-        Directory.CreateDirectory(iconsDir);
         Directory.CreateDirectory(buildDir);
 
         using var document = await JsonDocument.ParseAsync(json);
@@ -51,9 +49,6 @@ static class PackProjectWriter
 
             names.Add(name);
             data.Append(Manifest.FormatDataLine(name, iconWidth, iconHeight, body)).Append('\n');
-
-            var icon = new Icon(name, body, iconWidth, iconHeight);
-            await File.WriteAllTextAsync(Path.Combine(iconsDir, name + ".svg"), icon.Svg);
         }
 
         var dataText = data.ToString();
@@ -105,20 +100,22 @@ static class PackProjectWriter
          """;
 
     // Disk mode: the generator emits a (compile-inert) "<Pascal>.Used.g.cs" listing the referenced icons.
-    // After compilation, read that list and copy the matching SVGs from the package's icons/ folder to the
-    // output directory (under iconifybundle/<prefix>/). Item/target names are pack-scoped so multiple
-    // referenced packs don't collide.
+    // After compilation, reconstruct just those icons' .svg files from the pack's single .icondata (via the
+    // shipped WriteUsedIcons task) into the output (under iconifybundle/<prefix>/), then mirror them into the
+    // publish output. Item/target names are pack-scoped so multiple referenced packs don't collide.
     static string BuildTargets(string prefix, string pascal) =>
         $"""
           <?xml version="1.0" encoding="utf-8"?>
           <Project>
+            <UsingTask TaskName="IconifyBundle.Build.WriteUsedIcons"
+                       AssemblyFile="$(MSBuildThisFileDirectory)../tasks/IconifyBundle.Build.dll" />
             <!-- Imported after the project body, so $(IconifyBundleMode) has its final value. In Disk mode
-                 write the generator's output (incl. the used-icon list) to disk for the copy target. -->
+                 write the generator's output (incl. the used-icon list) to disk for the target below. -->
             <PropertyGroup Condition="'$(IconifyBundleMode)' == 'Disk'">
               <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
               <CompilerGeneratedFilesOutputPath Condition="'$(CompilerGeneratedFilesOutputPath)' == ''">$(IntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
             </PropertyGroup>
-            <Target Name="IconifyBundleCopyUsed_{pascal}"
+            <Target Name="IconifyBundleWriteUsed_{pascal}"
                     AfterTargets="CoreCompile"
                     Condition="'$(IconifyBundleMode)' == 'Disk'">
               <ItemGroup>
@@ -130,15 +127,14 @@ static class PackProjectWriter
               <ItemGroup>
                 <_IconifyUsedName_{pascal} Include="@(_IconifyUsedLine_{pascal})"
                   Condition="'%(Identity)' != '' and !$([System.String]::new('%(Identity)').StartsWith('/')) and !$([System.String]::new('%(Identity)').StartsWith('#'))" />
-                <_IconifySvg_{pascal} Include="@(_IconifyUsedName_{pascal}->'$(MSBuildThisFileDirectory)../icons/%(Identity).svg')" />
               </ItemGroup>
-              <Copy SourceFiles="@(_IconifySvg_{pascal})"
-                    DestinationFiles="@(_IconifySvg_{pascal}->'$(OutDir)iconifybundle/{prefix}/%(Filename)%(Extension)')"
-                    SkipUnchangedFiles="true"
-                    Condition="'@(_IconifySvg_{pascal})' != ''" />
+              <WriteUsedIcons Condition="'@(_IconifyUsedName_{pascal})' != ''"
+                              IconData="$(MSBuildThisFileDirectory){prefix}.icondata"
+                              UsedNames="@(_IconifyUsedName_{pascal})"
+                              OutputDir="$(OutDir)iconifybundle/{prefix}" />
             </Target>
-            <!-- The above copies to the build output; dotnet publish needs the same files under PublishDir.
-                 Build runs before publish, so the OutDir copies already exist by here. -->
+            <!-- The above writes to the build output; dotnet publish needs the same files under PublishDir.
+                 Build runs before publish, so the OutDir files already exist by here. -->
             <Target Name="IconifyBundlePublishUsed_{pascal}"
                     BeforeTargets="CopyFilesToPublishDirectory"
                     Condition="'$(IconifyBundleMode)' == 'Disk'">
@@ -179,9 +175,11 @@ static class PackProjectWriter
             ? ""
             : $"\n    <PackageLicenseExpression>{licenseSpdx}</PackageLicenseExpression>";
 
-        // Absolute path to the built generator dll; $(Configuration) resolves to the pack build's config.
-        var generatorDll =
-            $"{RepoPaths.Root.Replace('\\', '/')}/src/IconifyBundle.Generator/bin/$(Configuration)/netstandard2.0/IconifyBundle.Generator.dll";
+        // Absolute paths to the built generator + build-task dlls; $(Configuration) resolves to the pack
+        // build's config.
+        var srcRoot = RepoPaths.Root.Replace('\\', '/') + "/src";
+        var generatorDll = $"{srcRoot}/IconifyBundle.Generator/bin/$(Configuration)/netstandard2.0/IconifyBundle.Generator.dll";
+        var buildTaskDll = $"{srcRoot}/IconifyBundle.Build/bin/$(Configuration)/netstandard2.0/IconifyBundle.Build.dll";
 
         return $"""
                 <Project Sdk="Microsoft.NET.Sdk">
@@ -211,15 +209,17 @@ static class PackProjectWriter
                   </ItemGroup>
                   <ItemGroup>
                     <None Include="readme.md" Pack="true" PackagePath="\" />
-                    <!-- Icon data (bodies + sizes) shipped for the generator to read at build, NOT embedded
-                         in the assembly. -->
+                    <!-- Icon data (bodies + sizes), the single source of icons. Read by the generator at
+                         build; in Disk mode the build task reconstructs the used .svg files from it. NOT
+                         embedded in the assembly, and shipped once (no separate icons/*.svg). -->
                     <None Include="{prefix}.icondata" Pack="true" PackagePath="build" />
                     <None Include="build/{packageId}.props" Pack="true" PackagePath="build" />
                     <None Include="build/{packageId}.targets" Pack="true" PackagePath="build" />
-                    <None Include="icons/*.svg" Pack="true" PackagePath="icons" />
                     <!-- Ship the generator as an analyzer in each pack so a single pack reference makes it
                          run in the consumer (analyzers are not transitive through the runtime package). -->
                     <None Include="{generatorDll}" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+                    <!-- Ship the Disk-mode build task (reconstructs used .svg files from the .icondata). -->
+                    <None Include="{buildTaskDll}" Pack="true" PackagePath="tasks" Visible="false" />
                   </ItemGroup>
                 </Project>
 

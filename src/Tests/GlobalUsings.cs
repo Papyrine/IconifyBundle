@@ -1,4 +1,5 @@
 global using IconifyBundle;
+global using IconifyBundle.Build;
 global using IconifyBundle.Generator;
 global using TUnit.Core;
 global using TUnit.Assertions;

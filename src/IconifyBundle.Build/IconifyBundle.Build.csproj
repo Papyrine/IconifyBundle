@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <!-- An MSBuild task assembly shipped per IconifyBundle.<Pack> package. In Disk mode it reconstructs the
+         referenced icons' .svg files from the pack's single .icondata, so the nuget ships icon bodies once. -->
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <!-- Microsoft.Build.* is referenced compile-only (ExcludeAssets=Runtime); the MSBuild host provides the
+         actual (patched) runtime, so its package audit advisory does not apply to what we ship or run. -->
+    <NoWarn>$(NoWarn);NU1902;NU1903</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- MSBuild provides these at task-execution time, so reference for compile only and never ship them. -->
+    <PackageReference Include="Microsoft.Build.Utilities.Core" PrivateAssets="all" ExcludeAssets="Runtime" />
+    <PackageReference Include="Microsoft.Build.Framework" PrivateAssets="all" ExcludeAssets="Runtime" />
+    <PackageReference Include="ProjectDefaults" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

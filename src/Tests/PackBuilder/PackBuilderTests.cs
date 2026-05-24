@@ -210,9 +210,11 @@ public class PackBuilderTests
         await Assert.That(entries).Contains($"build/{project.PackageId}.targets");
         await Assert.That(entries).Contains($"lib/net8.0/{project.PackageId}.dll");
         await Assert.That(entries).Contains("analyzers/dotnet/cs/IconifyBundle.Generator.dll");
+        await Assert.That(entries).Contains("tasks/IconifyBundle.Build.dll");
         // Icon data ships outside the assembly; it must NOT be embedded as a resource any more.
         await Assert.That(entries.Any(_ => _.EndsWith("iconifybundle.pack.json"))).IsFalse();
-        await Assert.That(entries.Any(_ => _.StartsWith("icons/") && _.EndsWith(".svg"))).IsTrue();
+        // The icons are reconstructed at build from the single .icondata; no per-icon .svg is shipped.
+        await Assert.That(entries.Any(_ => _.StartsWith("icons/"))).IsFalse();
     }
 
     static void WritePacksScaffolding()

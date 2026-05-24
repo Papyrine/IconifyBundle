@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="IconifyBundle/IconifyBundle.csproj" />
+  <Project Path="IconifyBundle.Build/IconifyBundle.Build.csproj" />
   <Project Path="IconifyBundle.Generator/IconifyBundle.Generator.csproj" />
   <Folder Name="/SolutionItems/">
     <File Path="appveyor.yml" />
