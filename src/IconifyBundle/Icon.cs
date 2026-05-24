@@ -26,6 +26,14 @@ public readonly struct Icon(
     /// <summary>The intrinsic height used for the <c>viewBox</c> (may be fractional).</summary>
     public double Height { get; } = height;
 
+    /// <summary>
+    /// Whether this is a real icon rather than a <c>default(Icon)</c>. <see cref="Icon"/> is a struct, so
+    /// <c>default(Icon).Body</c> is null despite the non-null annotation; renderers use this to skip an unset icon.
+    /// </summary>
+    public bool HasBody =>
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+        Body is not null;
+
     /// <summary>The full standalone <c>&lt;svg&gt;</c> document for this icon.</summary>
     public string Svg => SvgBuilder.Build(this);
 

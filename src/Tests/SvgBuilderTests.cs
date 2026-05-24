@@ -22,6 +22,15 @@ public class SvgBuilderTests
         await Assert.That(Sample.Svg).IsEqualTo(SvgBuilder.Build(Sample));
 
     [Test]
+    public async Task Default_icon_renders_nothing()
+    {
+        await Assert.That(default(Icon).HasBody).IsFalse();
+        await Assert.That(Sample.HasBody).IsTrue();
+        await Assert.That(SvgBuilder.Build(default)).IsEqualTo("");
+        await Assert.That(default(Icon).Svg).IsEqualTo("");
+    }
+
+    [Test]
     public async Task Icon_stream_round_trips()
     {
         using var stream = Sample.OpenStream();

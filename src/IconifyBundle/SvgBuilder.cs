@@ -20,6 +20,12 @@ public static class SvgBuilder
     /// </summary>
     public static string Build(Icon icon, int? width, int? height, string? cssClass)
     {
+        // A default(Icon) has no body; render nothing rather than an empty <svg> shell.
+        if (!icon.HasBody)
+        {
+            return "";
+        }
+
         var builder = new StringBuilder();
         builder.Append("<svg xmlns=\"").Append(xmlns).Append('"');
         builder.Append(" width=\"").Append(Format(width ?? icon.Width)).Append('"');

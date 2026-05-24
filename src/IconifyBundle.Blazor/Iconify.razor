@@ -3,7 +3,7 @@
 @* Renders an IconifyBundle <see cref="Icon"/> as an inline SVG. Extra attributes (class, style,
    aria-*, ...) are splatted onto the root <svg> element. *@
 
-@if (Value.Body is not null)
+@if (Value.HasBody)
 {
     <svg xmlns="http://www.w3.org/2000/svg"
          width="@F(Width ?? Value.Width)"
