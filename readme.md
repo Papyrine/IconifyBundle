@@ -48,6 +48,11 @@ The strongly-typed `...Path` members require C# 14 (emitted as static extension 
 > Only icons referenced through the strongly-typed API are materialised. Dynamic, string-based lookups
 > (`Feather.PathOf(name)`, the `IconPack` indexer) resolve only icons that were *also* referenced
 > statically somewhere; otherwise they throw.
+>
+> This selection happens at **compile time**, not at trim or publish time. A
+> `not materialised` error means the icon was never referenced through a member access
+> the generator could see - not that trimming removed it. Materialised icons run their
+> registration from a module initializer that the trimmer preserves.
 
 
 ## Usage
