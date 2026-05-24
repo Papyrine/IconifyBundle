@@ -185,7 +185,10 @@ public class PackBuilderTests
     static string BuildSolution(IEnumerable<PackProjectWriter.PackProject> projects)
     {
         var builder = new StringBuilder("<Solution>\n");
-        foreach (var project in projects)
+        // Largest packs first (by icon count, a proxy for compile cost): MSBuild starts projects roughly
+        // in listed order, so the few heavy packs (FluentEmoji, Noto, MaterialSymbols, ...) begin early and
+        // compile alongside the many small ones, rather than serialising at the tail of the parallel build.
+        foreach (var project in projects.OrderByDescending(_ => _.IconCount))
         {
             var relative = Path.GetRelativePath(RepoPaths.Packs, project.CsprojPath).Replace('\\', '/');
             builder.Append("  <Project Path=\"").Append(relative).Append("\" />\n");
