@@ -9,7 +9,7 @@ public class IconWriterTests
     [Arguments(48, 17.5)]
     public async Task BuildSvg_matches_SvgBuilder(double width, double height)
     {
-        const string body = "<path stroke=\"currentColor\" d=\"M1 1\"/>";
+        const string body = """<path stroke="currentColor" d="M1 1"/>""";
 
         var expected = SvgBuilder.Build(new("activity", body, width, height));
         await Assert.That(IconWriter.BuildSvg(width, height, body)).IsEqualTo(expected);

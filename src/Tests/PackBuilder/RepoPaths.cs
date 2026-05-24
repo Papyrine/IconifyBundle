@@ -24,6 +24,7 @@ static class RepoPaths
             .FirstOrDefault()
             ?.Value
             .Trim();
+
         if (string.IsNullOrEmpty(version))
         {
             throw new InvalidOperationException($"No <IconifyBundleVersion> element found in {propsPath}.");

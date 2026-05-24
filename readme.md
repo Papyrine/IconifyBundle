@@ -66,7 +66,7 @@ The lower-level runtime API (the same `Icon` type the generated members return):
 // An Icon carries the inner SVG body and intrinsic size.
 var icon = new Icon(
     "activity",
-    "<path stroke=\"currentColor\" d=\"M12 2v20\"/>",
+    """<path stroke="currentColor" d="M12 2v20"/>""",
     24,
     24);
 

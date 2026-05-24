@@ -171,9 +171,10 @@ public class PackBuilderTests
         return project.LicenseTitle;
     }
 
+    static string[] units = ["B", "KB", "MB", "GB"];
+
     static string FormatSize(long bytes)
     {
-        string[] units = ["B", "KB", "MB", "GB"];
         double size = bytes;
         var unit = 0;
         while (size >= 1024 && unit < units.Length - 1)

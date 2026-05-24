@@ -1,10 +1,3 @@
-using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Text;
-
 static class GeneratorRunner
 {
     public static GeneratorDriverRunResult Run(
@@ -18,7 +11,7 @@ static class GeneratorRunner
         var compilation = CSharpCompilation.Create(
             "GeneratorTest",
             [CSharpSyntaxTree.ParseText(source, parseOptions)],
-            References,
+            references,
             new(OutputKind.DynamicallyLinkedLibrary));
 
         ImmutableArray<AdditionalText> additionalTexts = data is null
@@ -34,7 +27,7 @@ static class GeneratorRunner
         return driver.RunGenerators(compilation).GetRunResult();
     }
 
-    static readonly List<MetadataReference> References = BuildReferences();
+    static List<MetadataReference> references = BuildReferences();
 
     static List<MetadataReference> BuildReferences()
     {

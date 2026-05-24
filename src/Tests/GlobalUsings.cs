@@ -1,3 +1,5 @@
+global using System.Collections.Immutable;
+global using System.Diagnostics.CodeAnalysis;
 global using IconifyBundle;
 global using IconifyBundle.Build;
 global using IconifyBundle.Generator;
@@ -7,5 +9,9 @@ global using TUnit.Assertions.Extensions;
 global using System.IO.Compression;
 global using System.Text.Json;
 global using System.Text.RegularExpressions;
+global using Microsoft.CodeAnalysis;
+global using Microsoft.CodeAnalysis.CSharp;
+global using Microsoft.CodeAnalysis.Diagnostics;
+global using Microsoft.CodeAnalysis.Text;
 global using Replicant;
 global using static VerifyTUnit.Verifier;

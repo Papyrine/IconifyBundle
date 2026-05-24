@@ -3,11 +3,14 @@ public class EmitterTests
     static Manifest Sample() =>
         Manifest.Parse(
             "feather",
-            "prefix=feather\n" +
-            "class=Feather\n" +
-            "\n" +
-            Manifest.FormatDataLine("activity", 24, 24, "<path d=\"M12 2v20\"/>") + "\n" +
-            Manifest.FormatDataLine("alert-circle", 24, 24, "<circle cx=\"12\"/>") + "\n");
+            $"""
+             prefix=feather
+             class=Feather
+
+             {Manifest.FormatDataLine("activity", 24, 24, """<path d="M12 2v20"/>""")}
+             {Manifest.FormatDataLine("alert-circle", 24, 24, """<circle cx="12"/>""")}
+
+             """);
 
     [Test]
     public Task Pack_class() =>

@@ -2,12 +2,15 @@ public class IconifyBundleGeneratorTests
 {
     // The shipped pack data file form: header + "name\twidth\theight\tbody" lines.
     const string featherData =
-        "prefix=feather\n" +
-        "class=Feather\n" +
-        "\n" +
-        "activity\t24\t24\t<path d=\"M12 2v20\"/>\n" +
-        "alert-circle\t24\t24\t<circle cx=\"12\"/>\n" +
-        "1password\t24\t24\t<rect width=\"24\"/>\n";
+        """
+        prefix=feather
+        class=Feather
+
+        activity	24	24	<path d="M12 2v20"/>
+        alert-circle	24	24	<circle cx="12"/>
+        1password	24	24	<rect width="24"/>
+
+        """;
 
     // A stub pack class (as the compiled IconifyBundle.Feather assembly would expose) plus a consumer that
     // uses only Feather.Activity - so only that icon should be materialised.
