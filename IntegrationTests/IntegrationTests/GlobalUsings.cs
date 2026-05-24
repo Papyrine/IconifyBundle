@@ -1,4 +1,4 @@
-global using Iconistic;
+global using IconifyBundle;
 global using TUnit.Core;
 global using TUnit.Assertions;
 global using TUnit.Assertions.Extensions;

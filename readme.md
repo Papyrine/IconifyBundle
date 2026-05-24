@@ -1,4 +1,4 @@
-# Iconistic
+# IconifyBundle
 
 Strongly-typed [Iconify](https://iconify.design/) icons for .NET, with optional on-disk extraction
 and Blazor helpers.
@@ -6,11 +6,11 @@ and Blazor helpers.
 
 ## How it works
 
-* **`Iconistic`** — the core runtime (`Icon`, `IconPack`, `SvgBuilder`) plus a small source generator
+* **`IconifyBundle`** — the core runtime (`Icon`, `IconPack`, `SvgBuilder`) plus a small source generator
   used only for on-disk extraction (see below).
-* **`Iconistic.<Pack>`** — one NuGet per Iconify pack (e.g. `Iconistic.Feather`). Each pack ships a
+* **`IconifyBundle.<Pack>`** — one NuGet per Iconify pack (e.g. `IconifyBundle.Feather`). Each pack ships a
   precompiled, strongly-typed class (e.g. `Feather`) with a member per icon (e.g. `Feather.Activity`),
-  so a **single reference** to the pack suffices - it pulls the `Iconistic` runtime in
+  so a **single reference** to the pack suffices - it pulls the `IconifyBundle` runtime in
   transitively. These packages are produced on demand by the `PackBuilder` test, which downloads each
   pack from the Iconify data and packs it; they are *not* committed to source control.
 
@@ -22,19 +22,19 @@ exposes string/stream access with no files on disk (`Feather.Activity.Svg`,
 `Feather.Activity.OpenStream()`).
 
 To also copy the pack's `.svg` files into the build output (e.g. to serve them as static assets),
-set the `IconisticExtractDisk` MSBuild property. The pack's shipped SVGs are then copied to the output
+set the `IconifyBundleExtractDisk` MSBuild property. The pack's shipped SVGs are then copied to the output
 directory and the generated API additionally exposes file paths (`Feather.ActivityPath`):
 
 ```xml
 <PropertyGroup>
-  <IconisticExtractDisk>true</IconisticExtractDisk>
+  <IconifyBundleExtractDisk>true</IconifyBundleExtractDisk>
 </PropertyGroup>
 ```
 
 The strongly-typed `Feather.ActivityPath` members are emitted as static extension properties by the
-generator, so for those a project also needs a direct `Iconistic` reference (analyzers don't flow
+generator, so for those a project also needs a direct `IconifyBundle` reference (analyzers don't flow
 transitively) and C# 14. `Feather.PathOf("activity")` is always available without either. The SVG
-files are copied to `iconistic/<prefix>/` under the output directory.
+files are copied to `iconifybundle/<prefix>/` under the output directory.
 
 
 ## Usage
@@ -72,7 +72,7 @@ using var stream = icon.OpenStream();
 ## Blazor
 
 ```razor
-@using Iconistic
+@using IconifyBundle
 
 <Iconify Value="Feather.Activity" Width="32" Height="32" class="text-primary" />
 ```
@@ -85,7 +85,7 @@ are splatted onto it). There is also an `Icon.ToMarkup()` extension returning a 
 
 ```
 dotnet build src -c Release
-src\PackBuilder\bin\Release\net10.0\PackBuilder.exe   # downloads packs, builds Iconistic.<Pack> nugets
+src\PackBuilder\bin\Release\net10.0\PackBuilder.exe   # downloads packs, builds IconifyBundle.<Pack> nugets
 dotnet build IntegrationTests -c Release
 dotnet build sample -c Release
 ```

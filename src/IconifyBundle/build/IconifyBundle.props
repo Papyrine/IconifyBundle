@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+
+  <!-- Expose IconifyBundleExtractDisk to the source generator as build_property.IconifyBundleExtractDisk -->
+  <ItemGroup>
+    <CompilerVisibleProperty Include="IconifyBundleExtractDisk" />
+  </ItemGroup>
+
+</Project>

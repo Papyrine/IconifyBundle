@@ -1,4 +1,4 @@
 <Solution>
-  <Project Path="Iconistic.Web/Iconistic.Web.csproj" />
-  <Project Path="Iconistic.Web.Tests/Iconistic.Web.Tests.csproj" />
+  <Project Path="IconifyBundle.Web/IconifyBundle.Web.csproj" />
+  <Project Path="IconifyBundle.Web.Tests/IconifyBundle.Web.Tests.csproj" />
 </Solution>

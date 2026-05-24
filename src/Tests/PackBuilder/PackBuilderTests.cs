@@ -112,7 +112,7 @@ public class PackBuilderTests
               <packageSources>
                 <clear />
                 <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
-                <!-- The locally-built Iconistic runtime that each pack references. -->
+                <!-- The locally-built IconifyBundle runtime that each pack references. -->
                 <add key="local" value="../nugets" />
               </packageSources>
             </configuration>

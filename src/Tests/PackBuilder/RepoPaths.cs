@@ -12,7 +12,7 @@ static class RepoPaths
 
     /// <summary>
     /// The version stamped on generated pack packages, read from the shared root <c>Version.props</c>
-    /// so packs stay aligned with the core Iconistic packages and the downstream consumers.
+    /// so packs stay aligned with the core IconifyBundle packages and the downstream consumers.
     /// </summary>
     public static string Version { get; } = ReadVersion();
 
@@ -20,13 +20,13 @@ static class RepoPaths
     {
         var propsPath = Path.Combine(Root, "Version.props");
         var version = XDocument.Load(propsPath)
-            .Descendants("IconisticVersion")
+            .Descendants("IconifyBundleVersion")
             .FirstOrDefault()
             ?.Value
             .Trim();
         if (string.IsNullOrEmpty(version))
         {
-            throw new InvalidOperationException($"No <IconisticVersion> element found in {propsPath}.");
+            throw new InvalidOperationException($"No <IconifyBundleVersion> element found in {propsPath}.");
         }
 
         return version;

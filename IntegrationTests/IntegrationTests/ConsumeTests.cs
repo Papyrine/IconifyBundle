@@ -1,7 +1,7 @@
 namespace IntegrationTests;
 
 // These tests only compile if the source generator emitted the strongly-typed Feather API into this
-// (Resource mode) consumer compilation from the referenced Iconistic.Feather package.
+// (Resource mode) consumer compilation from the referenced IconifyBundle.Feather package.
 public class ConsumeTests
 {
     [Test]

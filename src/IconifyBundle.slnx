@@ -1,0 +1,12 @@
+<Solution>
+  <Project Path="IconifyBundle/IconifyBundle.csproj" />
+  <Project Path="IconifyBundle.Generator/IconifyBundle.Generator.csproj" />
+  <Folder Name="/SolutionItems/">
+    <File Path="appveyor.yml" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="mdsnippets.json" />
+  </Folder>
+  <Project Path="IconifyBundle.Blazor/IconifyBundle.Blazor.csproj" />
+  <Project Path="Tests/Tests.csproj" />
+</Solution>

@@ -1,5 +1,5 @@
 /// <summary>
-/// Materialises a buildable <c>Iconistic.&lt;Pack&gt;</c> project from a downloaded Iconify pack JSON.
+/// Materialises a buildable <c>IconifyBundle.&lt;Pack&gt;</c> project from a downloaded Iconify pack JSON.
 /// </summary>
 static class PackProjectWriter
 {
@@ -8,7 +8,7 @@ static class PackProjectWriter
     public static async Task<PackProject> Write(string prefix, Stream json, string packsDir)
     {
         var pascal = IdentifierNaming.ToPascalCase(prefix);
-        var packageId = $"Iconistic.{pascal}";
+        var packageId = $"IconifyBundle.{pascal}";
         var packDir = Path.Combine(packsDir, packageId);
 
         if (Directory.Exists(packDir))
@@ -28,7 +28,7 @@ static class PackProjectWriter
         var iconsElement = root.GetProperty("icons");
 
         var names = new List<string>();
-        var packJsonPath = Path.Combine(packDir, "iconistic.pack.json");
+        var packJsonPath = Path.Combine(packDir, "iconifybundle.pack.json");
         await using (var stream = File.Create(packJsonPath))
         await using (var writer = new Utf8JsonWriter(stream))
         {
@@ -111,10 +111,10 @@ static class PackProjectWriter
          <?xml version="1.0" encoding="utf-8"?>
          <Project>
            <ItemGroup>
-             <AdditionalFiles Include="$(MSBuildThisFileDirectory){prefix}.manifest" IconisticPack="{prefix}" />
+             <AdditionalFiles Include="$(MSBuildThisFileDirectory){prefix}.manifest" IconifyBundlePack="{prefix}" />
            </ItemGroup>
            <ItemGroup>
-             <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="IconisticPack" />
+             <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="IconifyBundlePack" />
            </ItemGroup>
          </Project>
 
@@ -124,11 +124,11 @@ static class PackProjectWriter
         $"""
          <?xml version="1.0" encoding="utf-8"?>
          <Project>
-           <!-- When the consumer sets IconisticExtractDisk, declare the pack's SVG files as
+           <!-- When the consumer sets IconifyBundleExtractDisk, declare the pack's SVG files as
                 copy-to-output build assets and let MSBuild place them under the output directory. -->
-           <ItemGroup Condition="'$(IconisticExtractDisk)' == 'true'">
+           <ItemGroup Condition="'$(IconifyBundleExtractDisk)' == 'true'">
              <None Include="$(MSBuildThisFileDirectory)../icons/*.svg"
-                   Link="iconistic/{prefix}/%(Filename)%(Extension)"
+                   Link="iconifybundle/{prefix}/%(Filename)%(Extension)"
                    CopyToOutputDirectory="PreserveNewest"
                    Visible="false"
                    Pack="false" />
@@ -141,7 +141,7 @@ static class PackProjectWriter
         $"""
          # {packageId}
 
-         {displayName} ({total} icons) for [Iconistic](https://github.com/SimonCropp/Iconistic) -
+         {displayName} ({total} icons) for [IconifyBundle](https://github.com/SimonCropp/IconifyBundle) -
          strongly-typed [Iconify](https://iconify.design/) icons for .NET.
 
          ```csharp
@@ -155,7 +155,7 @@ static class PackProjectWriter
 
     static string BuildCsproj(string packageId, string prefix, string displayName, int total)
     {
-        var description = $"{displayName} ({total} icons) for Iconistic.";
+        var description = $"{displayName} ({total} icons) for IconifyBundle.";
 
         return $"""
                 <Project Sdk="Microsoft.NET.Sdk">
@@ -180,12 +180,12 @@ static class PackProjectWriter
                     <NoWarn>$(NoWarn);NU5128;CS0108</NoWarn>
                   </PropertyGroup>
                   <ItemGroup>
-                    <!-- The compiled pack class returns Iconistic.Icon and uses Iconistic.IconPack.
+                    <!-- The compiled pack class returns IconifyBundle.Icon and uses IconifyBundle.IconPack.
                          ExcludeAssets=analyzers: the pack doesn't need the generator running on itself. -->
-                    <PackageReference Include="Iconistic" Version="{RepoPaths.Version}" ExcludeAssets="analyzers" />
+                    <PackageReference Include="IconifyBundle" Version="{RepoPaths.Version}" ExcludeAssets="analyzers" />
                   </ItemGroup>
                   <ItemGroup>
-                    <EmbeddedResource Include="iconistic.pack.json" LogicalName="iconistic.pack.json" />
+                    <EmbeddedResource Include="iconifybundle.pack.json" LogicalName="iconifybundle.pack.json" />
                     <None Include="readme.md" Pack="true" PackagePath="\" />
                     <None Include="{prefix}.manifest" Pack="true" PackagePath="build" />
                     <None Include="build/{packageId}.props" Pack="true" PackagePath="build" />

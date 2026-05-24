@@ -25,7 +25,7 @@ static class GeneratorRunner
             : [new TestAdditionalText("pack.manifest", manifest)];
 
         var driver = CSharpGeneratorDriver.Create(
-            generators: [new IconisticGenerator().AsSourceGenerator()],
+            generators: [new IconifyBundleGenerator().AsSourceGenerator()],
             additionalTexts: additionalTexts,
             parseOptions: parseOptions,
             optionsProvider: new TestOptionsProvider(extractDisk, prefix));
@@ -61,7 +61,7 @@ static class GeneratorRunner
     {
         public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value)
         {
-            if (key == "build_property.IconisticExtractDisk")
+            if (key == "build_property.IconifyBundleExtractDisk")
             {
                 value = extractDisk ? "true" : "false";
                 return true;
@@ -76,7 +76,7 @@ static class GeneratorRunner
     {
         public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value)
         {
-            if (key == "build_metadata.AdditionalFiles.IconisticPack")
+            if (key == "build_metadata.AdditionalFiles.IconifyBundlePack")
             {
                 value = prefix;
                 return true;

@@ -7,10 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Iconistic packages (restored from the local ../nugets feed) -->
-    <PackageVersion Include="Iconistic" Version="$(IconisticVersion)" />
-    <PackageVersion Include="Iconistic.Blazor" Version="$(IconisticVersion)" />
-    <PackageVersion Include="Iconistic.Feather" Version="$(IconisticVersion)" />
+    <!-- IconifyBundle packages (restored from the local ../nugets feed) -->
+    <PackageVersion Include="IconifyBundle" Version="$(IconifyBundleVersion)" />
+    <PackageVersion Include="IconifyBundle.Blazor" Version="$(IconifyBundleVersion)" />
+    <PackageVersion Include="IconifyBundle.Feather" Version="$(IconifyBundleVersion)" />
   </ItemGroup>
 
   <ItemGroup>

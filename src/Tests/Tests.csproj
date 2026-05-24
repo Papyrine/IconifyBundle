@@ -16,8 +16,8 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="MarkdownSnippets.MsBuild" PrivateAssets="all" />
     <PackageReference Include="ProjectDefaults" PrivateAssets="all" />
-    <ProjectReference Include="..\Iconistic\Iconistic.csproj" />
-    <ProjectReference Include="..\Iconistic.Generator\Iconistic.Generator.csproj" />
+    <ProjectReference Include="..\IconifyBundle\IconifyBundle.csproj" />
+    <ProjectReference Include="..\IconifyBundle.Generator\IconifyBundle.Generator.csproj" />
   </ItemGroup>
 
 </Project>

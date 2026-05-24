@@ -6,15 +6,15 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <!-- Opt into copying the pack's SVG files to the build output + generating file-path members. -->
-    <IconisticExtractDisk>true</IconisticExtractDisk>
+    <IconifyBundleExtractDisk>true</IconifyBundleExtractDisk>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="TUnit" />
-    <!-- The direct Iconistic reference brings the path-extension generator (analyzers are not
-         transitive); Iconistic.Feather carries the precompiled icon API. -->
-    <PackageReference Include="Iconistic" />
-    <PackageReference Include="Iconistic.Feather" />
+    <!-- The direct IconifyBundle reference brings the path-extension generator (analyzers are not
+         transitive); IconifyBundle.Feather carries the precompiled icon API. -->
+    <PackageReference Include="IconifyBundle" />
+    <PackageReference Include="IconifyBundle.Feather" />
   </ItemGroup>
 
 </Project>

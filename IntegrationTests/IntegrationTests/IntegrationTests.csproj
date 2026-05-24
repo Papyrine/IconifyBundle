@@ -6,12 +6,12 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <!-- Default behavior: the typed API is compiled into the pack, so a single reference to
-         Iconistic.Feather suffices (it pulls the Iconistic runtime transitively). -->
+         IconifyBundle.Feather suffices (it pulls the IconifyBundle runtime transitively). -->
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="TUnit" />
-    <PackageReference Include="Iconistic.Feather" />
+    <PackageReference Include="IconifyBundle.Feather" />
   </ItemGroup>
 
 </Project>
