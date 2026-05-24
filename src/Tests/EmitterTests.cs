@@ -3,13 +3,11 @@ public class EmitterTests
     static Manifest Sample() =>
         Manifest.Parse(
             "feather",
-            """
-            prefix=feather
-            class=Feather
-
-            activity
-            alert-circle
-            """);
+            "prefix=feather\n" +
+            "class=Feather\n" +
+            "\n" +
+            Manifest.FormatDataLine("activity", 24, 24, "<path d=\"M12 2v20\"/>") + "\n" +
+            Manifest.FormatDataLine("alert-circle", 24, 24, "<circle cx=\"12\"/>") + "\n");
 
     [Test]
     public Task Pack_class() =>
@@ -18,6 +16,18 @@ public class EmitterTests
     [Test]
     public Task Path_extensions() =>
         Verify(Emitter.EmitPathExtensions(Sample()));
+
+    [Test]
+    public Task Resource_registration() =>
+        Verify(Emitter.EmitResourceRegistration(Sample(), ["activity", "alert-circle"]));
+
+    [Test]
+    public Task Disk_registration() =>
+        Verify(Emitter.EmitDiskRegistration(Sample(), ["activity", "alert-circle"]));
+
+    [Test]
+    public Task Used_list() =>
+        Verify(Emitter.EmitUsedList(Sample(), ["activity", "alert-circle"]));
 
     [Test]
     public Task Member_matching_type_name_is_renamed()

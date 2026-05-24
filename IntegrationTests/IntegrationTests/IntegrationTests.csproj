@@ -5,8 +5,9 @@
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <!-- Default behavior: the typed API is compiled into the pack, so a single reference to
-         IconifyBundle.Feather suffices (it pulls the IconifyBundle runtime transitively). -->
+    <!-- Default (Resource mode): the generator bakes only the referenced icons into this assembly. A
+         single reference to IconifyBundle.Feather suffices - it carries both the typed API and the
+         generator (as an analyzer), and pulls the IconifyBundle runtime transitively. -->
   </PropertyGroup>
 
   <ItemGroup>

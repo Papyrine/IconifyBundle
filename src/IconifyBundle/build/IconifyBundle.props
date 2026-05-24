@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
 
-  <!-- Expose IconifyBundleExtractDisk to the source generator as build_property.IconifyBundleExtractDisk -->
+  <PropertyGroup>
+    <!-- Resource (default): used icons are baked into this assembly. Disk: used icons are written to the
+         build output as .svg files. The two modes are mutually exclusive. The Disk-mode build wiring lives
+         in each pack's .targets (imported after the project body, so it sees the final mode value). -->
+    <IconifyBundleMode Condition="'$(IconifyBundleMode)' == ''">Resource</IconifyBundleMode>
+  </PropertyGroup>
+
+  <!-- Surface the selected mode to the source generator. -->
   <ItemGroup>
-    <CompilerVisibleProperty Include="IconifyBundleExtractDisk" />
+    <CompilerVisibleProperty Include="IconifyBundleMode" />
   </ItemGroup>
 
 </Project>

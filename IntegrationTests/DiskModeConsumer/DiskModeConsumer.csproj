@@ -5,15 +5,15 @@
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <!-- Opt into copying the pack's SVG files to the build output + generating file-path members. -->
-    <IconifyBundleExtractDisk>true</IconifyBundleExtractDisk>
+    <!-- Disk mode: only the referenced icons are written to the build output as .svg files, and the
+         generator emits the file-path members (e.g. Feather.ActivityPath). Mutually exclusive with the
+         default Resource mode. -->
+    <IconifyBundleMode>Disk</IconifyBundleMode>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="TUnit" />
-    <!-- The direct IconifyBundle reference brings the path-extension generator (analyzers are not
-         transitive); IconifyBundle.Feather carries the precompiled icon API. -->
-    <PackageReference Include="IconifyBundle" />
+    <!-- A single pack reference suffices: the generator ships as an analyzer inside the pack. -->
     <PackageReference Include="IconifyBundle.Feather" />
   </ItemGroup>
 

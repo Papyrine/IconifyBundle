@@ -33,48 +33,31 @@ static class PackProjectWriter
         var defaultHeight = root.TryGetProperty("height", out var h) ? h.GetDouble() : 16;
         var iconsElement = root.GetProperty("icons");
 
+        // The pack data file: header + one "name\twidth\theight\tbody" line per icon. Shipped as an
+        // AdditionalFile (not embedded in the assembly) for the generator to read at build time, so it can
+        // materialise only the icons a consumer uses.
         var names = new List<string>();
-        var packJsonPath = Path.Combine(packDir, "iconifybundle.pack.json");
-        await using (var stream = File.Create(packJsonPath))
-        await using (var writer = new Utf8JsonWriter(stream))
+        var data = new StringBuilder()
+            .Append("prefix=").Append(prefix).Append('\n')
+            .Append("class=").Append(pascal).Append("\n\n");
+
+        foreach (var entry in iconsElement.EnumerateObject())
         {
-            writer.WriteStartObject();
-            writer.WriteString("prefix", prefix);
-            writer.WriteNumber("width", defaultWidth);
-            writer.WriteNumber("height", defaultHeight);
-            writer.WriteStartObject("icons");
+            var name = entry.Name;
+            var value = entry.Value;
+            var body = value.GetProperty("body").GetString()!;
+            var iconWidth = value.TryGetProperty("width", out var iw) ? iw.GetDouble() : defaultWidth;
+            var iconHeight = value.TryGetProperty("height", out var ih) ? ih.GetDouble() : defaultHeight;
 
-            foreach (var entry in iconsElement.EnumerateObject())
-            {
-                var name = entry.Name;
-                var value = entry.Value;
-                var body = value.GetProperty("body").GetString()!;
-                var iconWidth = value.TryGetProperty("width", out var iw) ? iw.GetDouble() : defaultWidth;
-                var iconHeight = value.TryGetProperty("height", out var ih) ? ih.GetDouble() : defaultHeight;
+            names.Add(name);
+            data.Append(Manifest.FormatDataLine(name, iconWidth, iconHeight, body)).Append('\n');
 
-                names.Add(name);
-
-                writer.WriteStartObject(name);
-                writer.WriteString("body", body);
-                if (iconWidth != defaultWidth)
-                {
-                    writer.WriteNumber("width", iconWidth);
-                }
-
-                if (iconHeight != defaultHeight)
-                {
-                    writer.WriteNumber("height", iconHeight);
-                }
-
-                writer.WriteEndObject();
-
-                var icon = new Icon(name, body, iconWidth, iconHeight);
-                await File.WriteAllTextAsync(Path.Combine(iconsDir, name + ".svg"), icon.Svg);
-            }
-
-            writer.WriteEndObject();
-            writer.WriteEndObject();
+            var icon = new Icon(name, body, iconWidth, iconHeight);
+            await File.WriteAllTextAsync(Path.Combine(iconsDir, name + ".svg"), icon.Svg);
         }
+
+        var dataText = data.ToString();
+        await File.WriteAllTextAsync(Path.Combine(packDir, $"{prefix}.icondata"), dataText);
 
         var hasInfo = root.TryGetProperty("info", out var info);
         var displayName = hasInfo && info.TryGetProperty("name", out var infoName)
@@ -94,14 +77,12 @@ static class PackProjectWriter
             licenseSpdx = license.TryGetProperty("spdx", out var ls) ? ls.GetString() : null;
         }
 
-        var manifestText = BuildManifest(prefix, pascal, names);
-        await File.WriteAllTextAsync(Path.Combine(packDir, $"{prefix}.manifest"), manifestText);
-        // The strongly-typed pack class is compiled into the pack assembly (was previously emitted by the
-        // source generator in each consumer); the manifest is still shipped for the path-extension generator.
-        await File.WriteAllTextAsync(Path.Combine(packDir, $"{pascal}.cs"), Emitter.EmitPackClass(Manifest.Parse(prefix, manifestText)));
+        // The strongly-typed pack class is compiled into the pack assembly; it carries no icon data
+        // (members resolve through the runtime registry the consumer's generator populates).
+        await File.WriteAllTextAsync(Path.Combine(packDir, $"{pascal}.cs"), Emitter.EmitPackClass(Manifest.Parse(prefix, dataText)));
         await File.WriteAllTextAsync(Path.Combine(packDir, "readme.md"), BuildReadme(packageId, pascal, displayName, names.Count));
         await File.WriteAllTextAsync(Path.Combine(buildDir, $"{packageId}.props"), BuildProps(prefix));
-        await File.WriteAllTextAsync(Path.Combine(buildDir, $"{packageId}.targets"), BuildTargets(prefix));
+        await File.WriteAllTextAsync(Path.Combine(buildDir, $"{packageId}.targets"), BuildTargets(prefix, pascal));
 
         var csprojPath = Path.Combine(packDir, $"{packageId}.csproj");
         await File.WriteAllTextAsync(csprojPath, BuildCsproj(packageId, prefix, displayName, names.Count, licenseSpdx));
@@ -109,28 +90,12 @@ static class PackProjectWriter
         return new(prefix, packageId, csprojPath, names.Count, licenseTitle, licenseUrl);
     }
 
-    static string BuildManifest(string prefix, string pascal, List<string> names)
-    {
-        var builder = new StringBuilder(
-            $"""
-             prefix={prefix}
-             class={pascal}
-             """);
-        builder.Append("\n\n");
-        foreach (var name in names)
-        {
-            builder.Append(name).Append('\n');
-        }
-
-        return builder.ToString();
-    }
-
     static string BuildProps(string prefix) =>
         $"""
          <?xml version="1.0" encoding="utf-8"?>
          <Project>
            <ItemGroup>
-             <AdditionalFiles Include="$(MSBuildThisFileDirectory){prefix}.manifest" IconifyBundlePack="{prefix}" />
+             <AdditionalFiles Include="$(MSBuildThisFileDirectory){prefix}.icondata" IconifyBundlePack="{prefix}" />
            </ItemGroup>
            <ItemGroup>
              <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="IconifyBundlePack" />
@@ -139,22 +104,42 @@ static class PackProjectWriter
 
          """;
 
-    static string BuildTargets(string prefix) =>
-        $"""
-         <?xml version="1.0" encoding="utf-8"?>
-         <Project>
-           <!-- When the consumer sets IconifyBundleExtractDisk, declare the pack's SVG files as
-                copy-to-output build assets and let MSBuild place them under the output directory. -->
-           <ItemGroup Condition="'$(IconifyBundleExtractDisk)' == 'true'">
-             <None Include="$(MSBuildThisFileDirectory)../icons/*.svg"
-                   Link="iconifybundle/{prefix}/%(Filename)%(Extension)"
-                   CopyToOutputDirectory="PreserveNewest"
-                   Visible="false"
-                   Pack="false" />
-           </ItemGroup>
-         </Project>
+    // Disk mode: the generator emits a (compile-inert) "<Pascal>.Used.g.cs" listing the referenced icons.
+    // After compilation, read that list and copy the matching SVGs from the package's icons/ folder to the
+    // output directory (under iconifybundle/<prefix>/). Item/target names are pack-scoped so multiple
+    // referenced packs don't collide.
+    static string BuildTargets(string prefix, string pascal) =>
+        $$"""
+          <?xml version="1.0" encoding="utf-8"?>
+          <Project>
+            <!-- Imported after the project body, so $(IconifyBundleMode) has its final value. In Disk mode
+                 write the generator's output (incl. the used-icon list) to disk for the copy target. -->
+            <PropertyGroup Condition="'$(IconifyBundleMode)' == 'Disk'">
+              <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+              <CompilerGeneratedFilesOutputPath Condition="'$(CompilerGeneratedFilesOutputPath)' == ''">$(IntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
+            </PropertyGroup>
+            <Target Name="IconifyBundleCopyUsed_{{pascal}}"
+                    AfterTargets="CoreCompile"
+                    Condition="'$(IconifyBundleMode)' == 'Disk'">
+              <ItemGroup>
+                <_IconifyUsedFile_{{pascal}} Include="$(CompilerGeneratedFilesOutputPath)\**\{{pascal}}.Used.g.cs" />
+              </ItemGroup>
+              <ReadLinesFromFile File="@(_IconifyUsedFile_{{pascal}})" Condition="'@(_IconifyUsedFile_{{pascal}})' != ''">
+                <Output TaskParameter="Lines" ItemName="_IconifyUsedLine_{{pascal}}" />
+              </ReadLinesFromFile>
+              <ItemGroup>
+                <_IconifyUsedName_{{pascal}} Include="@(_IconifyUsedLine_{{pascal}})"
+                  Condition="'%(Identity)' != '' and !$([System.String]::new('%(Identity)').StartsWith('/')) and !$([System.String]::new('%(Identity)').StartsWith('#'))" />
+                <_IconifySvg_{{pascal}} Include="@(_IconifyUsedName_{{pascal}}->'$(MSBuildThisFileDirectory)../icons/%(Identity).svg')" />
+              </ItemGroup>
+              <Copy SourceFiles="@(_IconifySvg_{{pascal}})"
+                    DestinationFiles="@(_IconifySvg_{{pascal}}->'$(OutDir)iconifybundle/{{prefix}}/%(Filename)%(Extension)')"
+                    SkipUnchangedFiles="true"
+                    Condition="'@(_IconifySvg_{{pascal}})' != ''" />
+            </Target>
+          </Project>
 
-         """;
+          """;
 
     static string BuildReadme(string packageId, string pascal, string displayName, int total) =>
         $"""
@@ -180,6 +165,10 @@ static class PackProjectWriter
         var licenseElement = string.IsNullOrEmpty(licenseSpdx)
             ? ""
             : $"\n    <PackageLicenseExpression>{licenseSpdx}</PackageLicenseExpression>";
+
+        // Absolute path to the built generator dll; $(Configuration) resolves to the pack build's config.
+        var generatorDll =
+            $"{RepoPaths.Root.Replace('\\', '/')}/src/IconifyBundle.Generator/bin/$(Configuration)/netstandard2.0/IconifyBundle.Generator.dll";
 
         return $"""
                 <Project Sdk="Microsoft.NET.Sdk">
@@ -208,12 +197,16 @@ static class PackProjectWriter
                     <PackageReference Include="IconifyBundle" Version="{RepoPaths.Version}" ExcludeAssets="analyzers" />
                   </ItemGroup>
                   <ItemGroup>
-                    <EmbeddedResource Include="iconifybundle.pack.json" LogicalName="iconifybundle.pack.json" />
                     <None Include="readme.md" Pack="true" PackagePath="\" />
-                    <None Include="{prefix}.manifest" Pack="true" PackagePath="build" />
+                    <!-- Icon data (bodies + sizes) shipped for the generator to read at build, NOT embedded
+                         in the assembly. -->
+                    <None Include="{prefix}.icondata" Pack="true" PackagePath="build" />
                     <None Include="build/{packageId}.props" Pack="true" PackagePath="build" />
                     <None Include="build/{packageId}.targets" Pack="true" PackagePath="build" />
                     <None Include="icons/*.svg" Pack="true" PackagePath="icons" />
+                    <!-- Ship the generator as an analyzer in each pack so a single pack reference makes it
+                         run in the consumer (analyzers are not transitive through the runtime package). -->
+                    <None Include="{generatorDll}" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
                   </ItemGroup>
                 </Project>
 

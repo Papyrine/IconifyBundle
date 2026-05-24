@@ -5,9 +5,7 @@
     <IsPackable>true</IsPackable>
     <IncludeBuildOutput>true</IncludeBuildOutput>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
-    <Description>Core runtime and Roslyn source generator for IconifyBundle - strongly typed Iconify icons for .NET.</Description>
-    <!-- analyzers/dotnet/cs ships an analyzer but this package also has runtime output, so suppress NU5128. -->
-    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <Description>Core runtime for IconifyBundle - strongly typed Iconify icons for .NET.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,19 +15,14 @@
     <PackageReference Include="ProjectDefaults" PrivateAssets="all" />
   </ItemGroup>
 
-  <!-- Build the generator (so its dll exists) and run it locally; it is packed as an analyzer below. -->
+  <!-- Build the generator (so its dll exists for the pack packages to ship) and dogfood it on this
+       compile. The generator is NOT packed here - it ships as an analyzer inside each IconifyBundle.<Pack>
+       package, so referencing both the runtime and a pack does not run it twice. -->
   <ItemGroup>
     <ProjectReference Include="..\IconifyBundle.Generator\IconifyBundle.Generator.csproj"
                       ReferenceOutputAssembly="false"
                       OutputItemType="Analyzer"
                       PrivateAssets="all" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\IconifyBundle.Generator\bin\$(Configuration)\netstandard2.0\IconifyBundle.Generator.dll"
-          Pack="true"
-          PackagePath="analyzers\dotnet\cs"
-          Visible="false" />
   </ItemGroup>
 
 </Project>

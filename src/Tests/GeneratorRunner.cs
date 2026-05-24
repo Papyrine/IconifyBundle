@@ -8,37 +8,46 @@ using Microsoft.CodeAnalysis.Text;
 static class GeneratorRunner
 {
     public static GeneratorDriverRunResult Run(
-        string? manifest,
-        bool extractDisk,
-        string prefix = "feather")
+        string? data,
+        bool disk,
+        string prefix = "feather",
+        string source = "public class Dummy;")
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
 
         var compilation = CSharpCompilation.Create(
             "GeneratorTest",
-            [CSharpSyntaxTree.ParseText("public class Dummy;", parseOptions)],
+            [CSharpSyntaxTree.ParseText(source, parseOptions)],
             References,
             new(OutputKind.DynamicallyLinkedLibrary));
 
-        ImmutableArray<AdditionalText> additionalTexts = manifest is null
+        ImmutableArray<AdditionalText> additionalTexts = data is null
             ? []
-            : [new TestAdditionalText("pack.manifest", manifest)];
+            : [new TestAdditionalText("pack.icondata", data)];
 
         var driver = CSharpGeneratorDriver.Create(
             generators: [new IconifyBundleGenerator().AsSourceGenerator()],
             additionalTexts: additionalTexts,
             parseOptions: parseOptions,
-            optionsProvider: new TestOptionsProvider(extractDisk, prefix));
+            optionsProvider: new TestOptionsProvider(disk, prefix));
 
         return driver.RunGenerators(compilation).GetRunResult();
     }
 
-    static readonly List<MetadataReference> References =
-        ((string) AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
-        .Split(Path.PathSeparator)
-        .Where(_ => _.Length > 0)
-        .Select(_ => (MetadataReference) MetadataReference.CreateFromFile(_))
-        .ToList();
+    static readonly List<MetadataReference> References = BuildReferences();
+
+    static List<MetadataReference> BuildReferences()
+    {
+        var references = ((string) AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
+            .Split(Path.PathSeparator)
+            .Where(_ => _.Length > 0)
+            .Select(_ => (MetadataReference) MetadataReference.CreateFromFile(_))
+            .ToList();
+
+        // The IconifyBundle runtime, so [IconifyPack]/Icon resolve and usage detection works.
+        references.Add(MetadataReference.CreateFromFile(typeof(IconifyPackAttribute).Assembly.Location));
+        return references;
+    }
 
     sealed class TestAdditionalText(string path, string text) : AdditionalText
     {
@@ -48,22 +57,22 @@ static class GeneratorRunner
             SourceText.From(text);
     }
 
-    sealed class TestOptionsProvider(bool extractDisk, string prefix) : AnalyzerConfigOptionsProvider
+    sealed class TestOptionsProvider(bool disk, string prefix) : AnalyzerConfigOptionsProvider
     {
-        public override AnalyzerConfigOptions GlobalOptions { get; } = new GlobalOptionsImpl(extractDisk);
+        public override AnalyzerConfigOptions GlobalOptions { get; } = new GlobalOptionsImpl(disk);
 
         public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => EmptyOptions.Instance;
 
         public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => new FileOptions(prefix);
     }
 
-    sealed class GlobalOptionsImpl(bool extractDisk) : AnalyzerConfigOptions
+    sealed class GlobalOptionsImpl(bool disk) : AnalyzerConfigOptions
     {
         public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value)
         {
-            if (key == "build_property.IconifyBundleExtractDisk")
+            if (key == "build_property.IconifyBundleMode")
             {
-                value = extractDisk ? "true" : "false";
+                value = disk ? "Disk" : "Resource";
                 return true;
             }
 

@@ -63,6 +63,32 @@ public class PackBuilderTests
         Log.Line($"Done: {projects.Count} packs.");
     }
 
+    // Explicit: builds a single pack (feather) for fast end-to-end validation of the consumer flow.
+    //   Tests.exe --treenode-filter "/*/*/PackBuilderTests/BuildFeatherPack"
+    [Test]
+    [NotInParallel]
+    [Explicit]
+    public async Task BuildFeatherPack()
+    {
+        Directory.CreateDirectory(RepoPaths.Nugets);
+        Directory.CreateDirectory(RepoPaths.Cache);
+        Directory.CreateDirectory(RepoPaths.Packs);
+        WritePacksScaffolding();
+
+        await using var cache = new HttpCache(RepoPaths.Cache);
+        await using var json = await cache.StreamAsync(
+            "https://raw.githubusercontent.com/iconify/icon-sets/master/json/feather.json");
+        var project = await PackProjectWriter.Write("feather", json, RepoPaths.Packs);
+
+        var result = await Dotnet.RunAsync(
+            $"pack \"{project.CsprojPath}\" -c Release -o \"{RepoPaths.Nugets}\" --nologo", echo: true);
+        await Assert.That(result.ExitCode).IsEqualTo(0);
+
+        var nupkg = Path.Combine(RepoPaths.Nugets, $"{project.PackageId}.{RepoPaths.Version}.nupkg");
+        await AssertPackageContents(nupkg, project);
+        Log.Line($"Built {project.PackageId}.");
+    }
+
     // Emits a markdown table (one row per produced pack) for inclusion in the readme via MarkdownSnippets,
     // prefixed with a note naming the packs excluded from publishing (grouped by why).
     static async Task WritePacksInclude(
@@ -176,10 +202,13 @@ public class PackBuilderTests
             .Select(_ => _.FullName.Replace('\\', '/'))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        await Assert.That(entries).Contains($"build/{project.Prefix}.manifest");
+        await Assert.That(entries).Contains($"build/{project.Prefix}.icondata");
         await Assert.That(entries).Contains($"build/{project.PackageId}.props");
         await Assert.That(entries).Contains($"build/{project.PackageId}.targets");
         await Assert.That(entries).Contains($"lib/net8.0/{project.PackageId}.dll");
+        await Assert.That(entries).Contains("analyzers/dotnet/cs/IconifyBundle.Generator.dll");
+        // Icon data ships outside the assembly; it must NOT be embedded as a resource any more.
+        await Assert.That(entries.Any(_ => _.EndsWith("iconifybundle.pack.json"))).IsFalse();
         await Assert.That(entries.Any(_ => _.StartsWith("icons/") && _.EndsWith(".svg"))).IsTrue();
     }
 

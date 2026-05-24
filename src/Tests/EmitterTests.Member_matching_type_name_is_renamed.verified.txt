@@ -3,13 +3,14 @@
 namespace IconifyBundle;
 
 /// <summary>Strongly typed access to the <c>feather</c> Iconify pack.</summary>
+[global::IconifyBundle.IconifyPack("feather")]
 public static class Feather
 {
     static readonly global::IconifyBundle.IconPack pack =
-        global::IconifyBundle.IconPack.ForAssembly(typeof(Feather).Assembly, "feather");
+        global::IconifyBundle.IconPack.ForPrefix("feather");
 
     public static global::IconifyBundle.Icon FeatherIcon => pack["feather"];
 
-    /// <summary>The on-disk path of the named icon (present only when the consumer set <c>IconifyBundleExtractDisk</c>).</summary>
+    /// <summary>The on-disk path of the named icon (present only in Disk mode, for materialised icons).</summary>
     public static string PathOf(string name) => pack.PathOf(name);
 }
