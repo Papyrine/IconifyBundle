@@ -1,14 +1,4 @@
-using System.Globalization;
-
 namespace IconifyBundle.Build;
-
-/// <summary>The body markup and intrinsic size of a single icon, parsed from a pack <c>.icondata</c> file.</summary>
-public readonly struct IconEntry(string body, double width, double height)
-{
-    public string Body { get; } = body;
-    public double Width { get; } = width;
-    public double Height { get; } = height;
-}
 
 /// <summary>
 /// The reconstruction logic behind the <see cref="WriteUsedIcons"/> MSBuild task, factored out as plain
@@ -24,15 +14,7 @@ public static class IconWriter
     {
         var w = width.ToString(CultureInfo.InvariantCulture);
         var h = height.ToString(CultureInfo.InvariantCulture);
-        return new StringBuilder()
-            .Append("<svg xmlns=\"http://www.w3.org/2000/svg\"")
-            .Append(" width=\"").Append(w).Append('"')
-            .Append(" height=\"").Append(h).Append('"')
-            .Append(" viewBox=\"0 0 ").Append(w).Append(' ').Append(h).Append('"')
-            .Append('>')
-            .Append(body)
-            .Append("</svg>")
-            .ToString();
+        return $"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{w}\" height=\"{h}\" viewBox=\"0 0 {w} {h}\">{body}</svg>";
     }
 
     /// <summary>
@@ -60,7 +42,8 @@ public static class IconWriter
 
             var path = Path.Combine(outputDir, name + ".svg");
             var svg = BuildSvg(icon.Width, icon.Height, icon.Body);
-            if (!File.Exists(path) || File.ReadAllText(path) != svg)
+            if (!File.Exists(path) ||
+                File.ReadAllText(path) != svg)
             {
                 File.WriteAllText(path, svg);
             }
@@ -101,7 +84,8 @@ public static class IconWriter
                 inHeader = false;
             }
 
-            if (line.Length == 0 || line[0] == '#')
+            if (line.Length == 0 ||
+                line[0] == '#')
             {
                 continue;
             }
@@ -131,7 +115,8 @@ public static class IconWriter
         for (var i = 0; i < value.Length; i++)
         {
             var c = value[i];
-            if (c != '\\' || i + 1 >= value.Length)
+            if (c != '\\' ||
+                i + 1 >= value.Length)
             {
                 builder.Append(c);
                 continue;

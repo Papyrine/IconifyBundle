@@ -1,5 +1,3 @@
-using Microsoft.Build.Framework;
-
 namespace IconifyBundle.Build;
 
 /// <summary>

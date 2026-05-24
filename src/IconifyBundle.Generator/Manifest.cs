@@ -1,9 +1,4 @@
-using System.Globalization;
-
 namespace IconifyBundle.Generator;
-
-/// <summary>The body markup and intrinsic size of a single icon.</summary>
-public readonly record struct IconData(string Body, double Width, double Height);
 
 /// <summary>
 /// A parsed pack data file. Shipped by an <c>IconifyBundle.&lt;Pack&gt;</c> NuGet as an
@@ -140,7 +135,8 @@ public sealed class Manifest : IEquatable<Manifest>
         for (var i = 0; i < value.Length; i++)
         {
             var c = value[i];
-            if (c != '\\' || i + 1 >= value.Length)
+            if (c != '\\' ||
+                i + 1 >= value.Length)
             {
                 builder.Append(c);
                 continue;

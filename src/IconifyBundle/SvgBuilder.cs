@@ -24,20 +24,14 @@ public static class SvgBuilder
             return "";
         }
 
-        var builder = new StringBuilder();
-        builder.Append("<svg xmlns=\"").Append(xmlns).Append('"');
-        builder.Append(" width=\"").Append(Format(width ?? icon.Width)).Append('"');
-        builder.Append(" height=\"").Append(Format(height ?? icon.Height)).Append('"');
-        builder.Append(" viewBox=\"0 0 ").Append(Format(icon.Width)).Append(' ').Append(Format(icon.Height)).Append('"');
-        if (!string.IsNullOrEmpty(cssClass))
-        {
-            builder.Append(" class=\"").Append(cssClass).Append('"');
-        }
+        var renderWidth = Format(width ?? icon.Width);
+        var renderHeight = Format(height ?? icon.Height);
+        var viewBox = $"0 0 {Format(icon.Width)} {Format(icon.Height)}";
+        var cssAttribute = string.IsNullOrEmpty(cssClass) ? "" : $" class=\"{cssClass}\"";
 
-        builder.Append('>');
-        builder.Append(icon.Body);
-        builder.Append("</svg>");
-        return builder.ToString();
+        return $"""
+                <svg xmlns="{xmlns}" width="{renderWidth}" height="{renderHeight}" viewBox="{viewBox}"{cssAttribute}>{icon.Body}</svg>
+                """;
     }
 
     // SVG numbers are always '.'-decimal and culture-independent.

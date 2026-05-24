@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace IconifyBundle.Generator;
 
 public static class Emitter
