@@ -37,8 +37,7 @@ public class IconWriterTests
     [Test]
     public async Task Write_emits_only_used_icons_matching_SvgBuilder()
     {
-        var dir = Path.Combine(Path.GetTempPath(), "iconwriter-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(dir);
+        using var dir = new TempDirectory();
         var dataPath = Path.Combine(dir, "feather.icondata");
         await File.WriteAllTextAsync(
             dataPath,
@@ -47,22 +46,15 @@ public class IconWriterTests
             Manifest.FormatDataLine("zap", 24, 24, "<rect/>") + "\n");
         var outDir = Path.Combine(dir, "out");
 
-        try
-        {
-            var missing = IconWriter.Write(dataPath, ["activity", "ghost"], outDir);
+        var missing = IconWriter.Write(dataPath, ["activity", "ghost"], outDir);
 
-            var activity = Path.Combine(outDir, "activity.svg");
-            await Assert.That(File.Exists(activity)).IsTrue();
-            await Assert.That(await File.ReadAllTextAsync(activity))
-                .IsEqualTo(SvgBuilder.Build(new("activity", "<path d=\"M1 1\"/>", 24, 24)));
-            // 'zap' exists in the pack but was not requested - not written.
-            await Assert.That(File.Exists(Path.Combine(outDir, "zap.svg"))).IsFalse();
-            // 'ghost' was requested but is not in the pack - reported as missing.
-            await Assert.That(missing).Contains("ghost");
-        }
-        finally
-        {
-            Directory.Delete(dir, recursive: true);
-        }
+        var activity = Path.Combine(outDir, "activity.svg");
+        await Assert.That(File.Exists(activity)).IsTrue();
+        await Assert.That(await File.ReadAllTextAsync(activity))
+            .IsEqualTo(SvgBuilder.Build(new("activity", "<path d=\"M1 1\"/>", 24, 24)));
+        // 'zap' exists in the pack but was not requested - not written.
+        await Assert.That(File.Exists(Path.Combine(outDir, "zap.svg"))).IsFalse();
+        // 'ghost' was requested but is not in the pack - reported as missing.
+        await Assert.That(missing).Contains("ghost");
     }
 }
