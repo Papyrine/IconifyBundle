@@ -3,7 +3,13 @@
 /// </summary>
 static class PackProjectWriter
 {
-    public sealed record PackProject(string Prefix, string PackageId, string CsprojPath, int IconCount);
+    public sealed record PackProject(
+        string Prefix,
+        string PackageId,
+        string CsprojPath,
+        int IconCount,
+        string LicenseTitle,
+        string? LicenseUrl);
 
     public static async Task<PackProject> Write(string prefix, Stream json, string packsDir)
     {
@@ -70,10 +76,23 @@ static class PackProjectWriter
             writer.WriteEndObject();
         }
 
-        var displayName = root.TryGetProperty("info", out var info) &&
-                          info.TryGetProperty("name", out var infoName)
+        var hasInfo = root.TryGetProperty("info", out var info);
+        var displayName = hasInfo && info.TryGetProperty("name", out var infoName)
             ? infoName.GetString() ?? packageId
             : packageId;
+
+        // Iconify ships per-pack license metadata (title + spdx + url) in info.license; surface it so
+        // consumers can see each pack's terms (some packs are copyleft - see readme), and stamp the real
+        // SPDX expression on the package instead of assuming MIT.
+        var licenseTitle = "";
+        string? licenseUrl = null;
+        string? licenseSpdx = null;
+        if (hasInfo && info.TryGetProperty("license", out var license))
+        {
+            licenseTitle = license.TryGetProperty("title", out var lt) ? lt.GetString() ?? "" : "";
+            licenseUrl = license.TryGetProperty("url", out var lu) ? lu.GetString() : null;
+            licenseSpdx = license.TryGetProperty("spdx", out var ls) ? ls.GetString() : null;
+        }
 
         var manifestText = BuildManifest(prefix, pascal, names);
         await File.WriteAllTextAsync(Path.Combine(packDir, $"{prefix}.manifest"), manifestText);
@@ -85,9 +104,9 @@ static class PackProjectWriter
         await File.WriteAllTextAsync(Path.Combine(buildDir, $"{packageId}.targets"), BuildTargets(prefix));
 
         var csprojPath = Path.Combine(packDir, $"{packageId}.csproj");
-        await File.WriteAllTextAsync(csprojPath, BuildCsproj(packageId, prefix, displayName, names.Count));
+        await File.WriteAllTextAsync(csprojPath, BuildCsproj(packageId, prefix, displayName, names.Count, licenseSpdx));
 
-        return new(prefix, packageId, csprojPath, names.Count);
+        return new(prefix, packageId, csprojPath, names.Count, licenseTitle, licenseUrl);
     }
 
     static string BuildManifest(string prefix, string pascal, List<string> names)
@@ -153,9 +172,14 @@ static class PackProjectWriter
 
          """;
 
-    static string BuildCsproj(string packageId, string prefix, string displayName, int total)
+    static string BuildCsproj(string packageId, string prefix, string displayName, int total, string? licenseSpdx)
     {
         var description = $"{displayName} ({total} icons) for IconifyBundle.";
+        // Stamp the pack's real license (SPDX) rather than assuming MIT. When Iconify supplies no SPDX,
+        // omit the expression rather than declaring a license the pack may not actually carry.
+        var licenseElement = string.IsNullOrEmpty(licenseSpdx)
+            ? ""
+            : $"\n    <PackageLicenseExpression>{licenseSpdx}</PackageLicenseExpression>";
 
         return $"""
                 <Project Sdk="Microsoft.NET.Sdk">
@@ -172,8 +196,7 @@ static class PackProjectWriter
                     <Description>{Escape(description)}</Description>
                     <PackageProjectUrl>https://iconify.design/</PackageProjectUrl>
                     <PackageTags>iconify;icons;svg;{prefix}</PackageTags>
-                    <Authors>$(RepositoryUrlEx)/graphs/contributors</Authors>
-                    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+                    <Authors>$(RepositoryUrlEx)/graphs/contributors</Authors>{licenseElement}
                     <PackageReadmeFile>readme.md</PackageReadmeFile>
                     <GenerateDocumentationFile>false</GenerateDocumentationFile>
                     <!-- CS0108: an icon named e.g. "equals"/"gethashcode" yields a member that hides an object member. -->

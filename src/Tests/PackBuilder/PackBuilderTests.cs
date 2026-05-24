@@ -14,9 +14,10 @@ public class PackBuilderTests
         WritePacksScaffolding();
 
         await using var cache = new HttpCache(RepoPaths.Cache);
-        var prefixes = await PackSelection.ResolveAsync(cache);
+        var selection = await PackSelection.ResolveAsync(cache);
+        var prefixes = selection.Prefixes;
         await Assert.That(prefixes.Count).IsGreaterThan(0);
-        Log.Line($"Generating {prefixes.Count} pack projects...");
+        Log.Line($"Generating {prefixes.Count} pack projects ({selection.Excluded.Count} excluded by license)...");
 
         // Generate every pack project on disk first (downloads + writing tens of thousands of SVGs, so
         // run in parallel; each pack writes to its own directory).
@@ -57,17 +58,28 @@ public class PackBuilderTests
         await Assert.That(File.Exists(nupkg)).IsTrue();
         await AssertPackageContents(nupkg, sample);
 
-        await WritePacksInclude(projects);
+        await WritePacksInclude(projects, selection.Excluded);
 
         Log.Line($"Done: {projects.Count} packs.");
     }
 
-    // Emits a markdown table (one row per produced pack) for inclusion in the readme via MarkdownSnippets.
-    static async Task WritePacksInclude(List<PackProjectWriter.PackProject> projects)
+    // Emits a markdown table (one row per produced pack) for inclusion in the readme via MarkdownSnippets,
+    // prefixed with a note naming the packs excluded from publishing (grouped by why).
+    static async Task WritePacksInclude(
+        List<PackProjectWriter.PackProject> projects,
+        List<PackSelection.ExcludedPack> excluded)
     {
         var builder = new StringBuilder();
-        builder.Append("| Package | Iconify | NuGet size | Assembly size |\n");
-        builder.Append("|---|---|--:|--:|\n");
+        if (excluded.Count > 0)
+        {
+            builder.Append("> **Note:** some Iconify packs are not published because their license is incompatible with redistribution in a public, commercially-consumable NuGet:\n");
+            AppendExcluded(builder, excluded, PackSelection.ExclusionReason.NonCommercial, "Non-commercial (CC BY-NC*)");
+            AppendExcluded(builder, excluded, PackSelection.ExclusionReason.Copyleft, "Copyleft (GPL)");
+            builder.Append('\n');
+        }
+
+        builder.Append("| Package | Iconify | License | NuGet size | Assembly size |\n");
+        builder.Append("|---|---|---|--:|--:|\n");
 
         foreach (var project in projects.OrderBy(_ => _.PackageId, StringComparer.OrdinalIgnoreCase))
         {
@@ -80,7 +92,8 @@ public class PackBuilderTests
                 .Append("](https://www.nuget.org/packages/").Append(project.PackageId)
                 .Append(") | [").Append(project.Prefix)
                 .Append("](https://icon-sets.iconify.design/").Append(project.Prefix)
-                .Append("/) | ").Append(FormatSize(nupkgSize))
+                .Append("/) | ").Append(License(project))
+                .Append(" | ").Append(FormatSize(nupkgSize))
                 .Append(" | ").Append(FormatSize(assemblySize))
                 .Append(" |\n");
         }
@@ -97,6 +110,36 @@ public class PackBuilderTests
         var entry = archive.Entries.FirstOrDefault(
             _ => _.FullName.Replace('\\', '/').Equals($"lib/net8.0/{packageId}.dll", StringComparison.OrdinalIgnoreCase));
         return entry?.Length ?? 0;
+    }
+
+    static void AppendExcluded(
+        StringBuilder builder,
+        List<PackSelection.ExcludedPack> excluded,
+        PackSelection.ExclusionReason reason,
+        string label)
+    {
+        var packs = excluded.Where(_ => _.Reason == reason).ToList();
+        if (packs.Count == 0)
+        {
+            return;
+        }
+
+        var links = string.Join(
+            ", ",
+            packs.Select(_ => $"[{_.Prefix}](https://icon-sets.iconify.design/{_.Prefix}/)"));
+        builder.Append("> - **").Append(label).Append("**: ").Append(links).Append('\n');
+    }
+
+    static string License(PackProjectWriter.PackProject project)
+    {
+        if (project.LicenseTitle.Length == 0)
+        {
+            return "";
+        }
+
+        return project.LicenseUrl is { Length: > 0 } url
+            ? $"[{project.LicenseTitle}]({url})"
+            : project.LicenseTitle;
     }
 
     static string FormatSize(long bytes)
