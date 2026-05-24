@@ -6,6 +6,9 @@
     <IncludeBuildOutput>true</IncludeBuildOutput>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
     <Description>Core runtime for IconifyBundle - strongly typed Iconify icons for .NET.</Description>
+    <!-- The generator dll ships in a non-lib folder (generator/) on purpose: it is injected as an analyzer
+         via the build targets, not referenced. So NU5100 ("not inside lib") / NU5128 are expected. -->
+    <NoWarn>$(NoWarn);NU5100;NU5128</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,8 +22,8 @@
 
   <!-- Build the generator (so its dll exists) and dogfood it on this compile. It is shipped in this package
        (a neutral 'generator/' folder, NOT 'analyzers/' so it isn't auto-applied) and injected into consumers
-       as an @(Analyzer) by build/buildTransitive props - so a single reference to any pack runs it, exactly
-       once, without each pack shipping its own copy. -->
+       as an @(Analyzer) by the build/buildTransitive .targets - so a single reference to any pack runs it,
+       exactly once, without each pack shipping its own copy. -->
   <ItemGroup>
     <ProjectReference Include="..\IconifyBundle.Generator\IconifyBundle.Generator.csproj"
                       ReferenceOutputAssembly="false"

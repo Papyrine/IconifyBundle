@@ -198,8 +198,9 @@ static class PackProjectWriter
                     <Authors>$(RepositoryUrlEx)/graphs/contributors</Authors>{licenseElement}
                     <PackageReadmeFile>readme.md</PackageReadmeFile>
                     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-                    <!-- CS0108: an icon named e.g. "equals"/"gethashcode" yields a member that hides an object member. -->
-                    <NoWarn>$(NoWarn);NU5128;CS0108</NoWarn>
+                    <!-- CS0108: an icon named e.g. "equals"/"gethashcode" yields a member that hides an object member.
+                         NU5100: the build task ships in tasks/ (not lib/) on purpose - it is an MSBuild task, not a reference. -->
+                    <NoWarn>$(NoWarn);NU5100;NU5128;CS0108</NoWarn>
                   </PropertyGroup>
                   <ItemGroup>
                     <!-- The compiled pack class returns IconifyBundle.Icon and uses IconifyBundle.IconPack.
