@@ -57,7 +57,60 @@ public class PackBuilderTests
         await Assert.That(File.Exists(nupkg)).IsTrue();
         await AssertPackageContents(nupkg, sample);
 
+        await WritePacksInclude(projects);
+
         Log.Line($"Done: {projects.Count} packs.");
+    }
+
+    // Emits a markdown table (one row per produced pack) for inclusion in the readme via MarkdownSnippets.
+    static async Task WritePacksInclude(List<PackProjectWriter.PackProject> projects)
+    {
+        var builder = new StringBuilder();
+        builder.Append("| Package | Iconify | NuGet size | Assembly size |\n");
+        builder.Append("|---|---|--:|--:|\n");
+
+        foreach (var project in projects.OrderBy(_ => _.PackageId, StringComparer.OrdinalIgnoreCase))
+        {
+            var nupkg = Path.Combine(RepoPaths.Nugets, $"{project.PackageId}.{RepoPaths.Version}.nupkg");
+            var nupkgSize = new FileInfo(nupkg).Length;
+            var assemblySize = await AssemblySize(nupkg, project.PackageId);
+
+            builder
+                .Append("| [").Append(project.PackageId)
+                .Append("](https://www.nuget.org/packages/").Append(project.PackageId)
+                .Append(") | [").Append(project.Prefix)
+                .Append("](https://icon-sets.iconify.design/").Append(project.Prefix)
+                .Append("/) | ").Append(FormatSize(nupkgSize))
+                .Append(" | ").Append(FormatSize(assemblySize))
+                .Append(" |\n");
+        }
+
+        var path = Path.Combine(RepoPaths.Root, "src", "packs.include.md");
+        await File.WriteAllTextAsync(path, builder.ToString());
+        Log.Line($"Wrote {path}");
+    }
+
+    // Uncompressed size of the shipped assembly (lib/net8.0/<PackageId>.dll) inside the nupkg.
+    static async Task<long> AssemblySize(string nupkg, string packageId)
+    {
+        await using var archive = await ZipFile.OpenReadAsync(nupkg);
+        var entry = archive.Entries.FirstOrDefault(
+            _ => _.FullName.Replace('\\', '/').Equals($"lib/net8.0/{packageId}.dll", StringComparison.OrdinalIgnoreCase));
+        return entry?.Length ?? 0;
+    }
+
+    static string FormatSize(long bytes)
+    {
+        string[] units = ["B", "KB", "MB", "GB"];
+        double size = bytes;
+        var unit = 0;
+        while (size >= 1024 && unit < units.Length - 1)
+        {
+            size /= 1024;
+            unit++;
+        }
+
+        return $"{size:0.#} {units[unit]}";
     }
 
     static string BuildSolution(IEnumerable<PackProjectWriter.PackProject> projects)

@@ -90,6 +90,10 @@ dotnet build IntegrationTests -c Release
 dotnet build sample -c Release
 ```
 
+## Notes
+
+https://github.com/iconify/icon-sets/blob/master/collections.md
+
 
 ## Icon
 
