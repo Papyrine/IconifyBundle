@@ -6,4 +6,5 @@
     <File Path="nuget.config" />
   </Folder>
   <Project Path="DiskModeConsumer/DiskModeConsumer.csproj" />
+  <Project Path="TrimmedConsumer/TrimmedConsumer.csproj" />
 </Solution>

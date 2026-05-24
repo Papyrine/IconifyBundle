@@ -109,7 +109,7 @@ static class PackProjectWriter
     // output directory (under iconifybundle/<prefix>/). Item/target names are pack-scoped so multiple
     // referenced packs don't collide.
     static string BuildTargets(string prefix, string pascal) =>
-        $$"""
+        $"""
           <?xml version="1.0" encoding="utf-8"?>
           <Project>
             <!-- Imported after the project body, so $(IconifyBundleMode) has its final value. In Disk mode
@@ -118,24 +118,37 @@ static class PackProjectWriter
               <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
               <CompilerGeneratedFilesOutputPath Condition="'$(CompilerGeneratedFilesOutputPath)' == ''">$(IntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
             </PropertyGroup>
-            <Target Name="IconifyBundleCopyUsed_{{pascal}}"
+            <Target Name="IconifyBundleCopyUsed_{pascal}"
                     AfterTargets="CoreCompile"
                     Condition="'$(IconifyBundleMode)' == 'Disk'">
               <ItemGroup>
-                <_IconifyUsedFile_{{pascal}} Include="$(CompilerGeneratedFilesOutputPath)\**\{{pascal}}.Used.g.cs" />
+                <_IconifyUsedFile_{pascal} Include="$(CompilerGeneratedFilesOutputPath)\**\{pascal}.Used.g.cs" />
               </ItemGroup>
-              <ReadLinesFromFile File="@(_IconifyUsedFile_{{pascal}})" Condition="'@(_IconifyUsedFile_{{pascal}})' != ''">
-                <Output TaskParameter="Lines" ItemName="_IconifyUsedLine_{{pascal}}" />
+              <ReadLinesFromFile File="@(_IconifyUsedFile_{pascal})" Condition="'@(_IconifyUsedFile_{pascal})' != ''">
+                <Output TaskParameter="Lines" ItemName="_IconifyUsedLine_{pascal}" />
               </ReadLinesFromFile>
               <ItemGroup>
-                <_IconifyUsedName_{{pascal}} Include="@(_IconifyUsedLine_{{pascal}})"
+                <_IconifyUsedName_{pascal} Include="@(_IconifyUsedLine_{pascal})"
                   Condition="'%(Identity)' != '' and !$([System.String]::new('%(Identity)').StartsWith('/')) and !$([System.String]::new('%(Identity)').StartsWith('#'))" />
-                <_IconifySvg_{{pascal}} Include="@(_IconifyUsedName_{{pascal}}->'$(MSBuildThisFileDirectory)../icons/%(Identity).svg')" />
+                <_IconifySvg_{pascal} Include="@(_IconifyUsedName_{pascal}->'$(MSBuildThisFileDirectory)../icons/%(Identity).svg')" />
               </ItemGroup>
-              <Copy SourceFiles="@(_IconifySvg_{{pascal}})"
-                    DestinationFiles="@(_IconifySvg_{{pascal}}->'$(OutDir)iconifybundle/{{prefix}}/%(Filename)%(Extension)')"
+              <Copy SourceFiles="@(_IconifySvg_{pascal})"
+                    DestinationFiles="@(_IconifySvg_{pascal}->'$(OutDir)iconifybundle/{prefix}/%(Filename)%(Extension)')"
                     SkipUnchangedFiles="true"
-                    Condition="'@(_IconifySvg_{{pascal}})' != ''" />
+                    Condition="'@(_IconifySvg_{pascal})' != ''" />
+            </Target>
+            <!-- The above copies to the build output; dotnet publish needs the same files under PublishDir.
+                 Build runs before publish, so the OutDir copies already exist by here. -->
+            <Target Name="IconifyBundlePublishUsed_{pascal}"
+                    BeforeTargets="CopyFilesToPublishDirectory"
+                    Condition="'$(IconifyBundleMode)' == 'Disk'">
+              <ItemGroup>
+                <_IconifyPublishSvg_{pascal} Include="$(OutDir)iconifybundle/{prefix}/*.svg" />
+              </ItemGroup>
+              <Copy SourceFiles="@(_IconifyPublishSvg_{pascal})"
+                    DestinationFiles="@(_IconifyPublishSvg_{pascal}->'$(PublishDir)iconifybundle/{prefix}/%(Filename)%(Extension)')"
+                    SkipUnchangedFiles="true"
+                    Condition="'@(_IconifyPublishSvg_{pascal})' != ''" />
             </Target>
           </Project>
 

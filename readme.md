@@ -32,9 +32,9 @@ configure - reference a pack and use it.
 
 ### Disk mode
 
-The referenced icons are written to the build output as `.svg` files (under `iconifybundle/<prefix>/`,
-e.g. to serve them as static assets), and the generated API additionally exposes file paths
-(`Feather.ActivityPath`):
+The referenced icons are written to the build and publish output as `.svg` files (under
+`iconifybundle/<prefix>/`, e.g. to serve them as static assets), and the generated API additionally
+exposes file paths (`Feather.ActivityPath`):
 
 ```xml
 <PropertyGroup>

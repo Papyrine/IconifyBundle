@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <!-- Resource mode (default): used icons are baked into this assembly. This project exists to verify
+         that behaviour survives a trimmed, self-contained publish (driven by the TrimmingTests test). -->
+    <!-- Don't fail the trimmed publish on framework trim warnings; the test asserts runtime behaviour. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- A single pack reference: it carries the typed API and the generator (as an analyzer). -->
+    <PackageReference Include="IconifyBundle.Feather" />
+  </ItemGroup>
+
+</Project>

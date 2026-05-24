@@ -29,4 +29,34 @@ public class ConsumeTests
 
         await Assert.That(text).IsEqualTo(Feather.Activity.Svg);
     }
+
+    // Dynamic, string-based access resolves icons that were also referenced statically (so materialised)...
+    [Test]
+    public async Task Dynamic_lookup_resolves_materialised_icon()
+    {
+        var pack = IconPack.ForPrefix("feather");
+
+        await Assert.That(pack["activity"].Name).IsEqualTo("activity");
+        await Assert.That(pack.Contains("activity")).IsTrue();
+    }
+
+    // ...but throws for an icon that was never referenced statically (and so was tree-shaken away).
+    [Test]
+    public async Task Dynamic_lookup_throws_for_unmaterialised_icon()
+    {
+        var pack = IconPack.ForPrefix("feather");
+        await Assert.That(pack.Contains("zap")).IsFalse();
+
+        var threw = false;
+        try
+        {
+            _ = pack["zap"];
+        }
+        catch (KeyNotFoundException)
+        {
+            threw = true;
+        }
+
+        await Assert.That(threw).IsTrue();
+    }
 }
