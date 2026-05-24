@@ -175,10 +175,9 @@ static class PackProjectWriter
             ? ""
             : $"\n    <PackageLicenseExpression>{licenseSpdx}</PackageLicenseExpression>";
 
-        // Absolute paths to the built generator + build-task dlls; $(Configuration) resolves to the pack
-        // build's config.
+        // Absolute path to the built build-task dll; $(Configuration) resolves to the pack build's config.
+        // (The generator is shipped by the IconifyBundle runtime package, not per pack.)
         var srcRoot = RepoPaths.Root.Replace('\\', '/') + "/src";
-        var generatorDll = $"{srcRoot}/IconifyBundle.Generator/bin/$(Configuration)/netstandard2.0/IconifyBundle.Generator.dll";
         var buildTaskDll = $"{srcRoot}/IconifyBundle.Build/bin/$(Configuration)/netstandard2.0/IconifyBundle.Build.dll";
 
         return $"""
@@ -204,8 +203,10 @@ static class PackProjectWriter
                   </PropertyGroup>
                   <ItemGroup>
                     <!-- The compiled pack class returns IconifyBundle.Icon and uses IconifyBundle.IconPack.
-                         ExcludeAssets=analyzers: the pack doesn't need the generator running on itself. -->
-                    <PackageReference Include="IconifyBundle" Version="{RepoPaths.Version}" ExcludeAssets="analyzers" />
+                         IconifyBundle also injects the source generator into the consumer (via its
+                         build/buildTransitive props), so a single reference to this pack runs it - the pack
+                         itself ships no generator. -->
+                    <PackageReference Include="IconifyBundle" Version="{RepoPaths.Version}" />
                   </ItemGroup>
                   <ItemGroup>
                     <None Include="readme.md" Pack="true" PackagePath="\" />
@@ -215,9 +216,6 @@ static class PackProjectWriter
                     <None Include="{prefix}.icondata" Pack="true" PackagePath="build" />
                     <None Include="build/{packageId}.props" Pack="true" PackagePath="build" />
                     <None Include="build/{packageId}.targets" Pack="true" PackagePath="build" />
-                    <!-- Ship the generator as an analyzer in each pack so a single pack reference makes it
-                         run in the consumer (analyzers are not transitive through the runtime package). -->
-                    <None Include="{generatorDll}" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
                     <!-- Ship the Disk-mode build task (reconstructs used .svg files from the .icondata). -->
                     <None Include="{buildTaskDll}" Pack="true" PackagePath="tasks" Visible="false" />
                   </ItemGroup>

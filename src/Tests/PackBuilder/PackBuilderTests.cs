@@ -163,9 +163,12 @@ public class PackBuilderTests
             return "";
         }
 
-        return project.LicenseUrl is { Length: > 0 } url
-            ? $"[{project.LicenseTitle}]({url})"
-            : project.LicenseTitle;
+        if (project.LicenseUrl is {Length: > 0} url)
+        {
+            return $"[{project.LicenseTitle}]({url})";
+        }
+
+        return project.LicenseTitle;
     }
 
     static string FormatSize(long bytes)
@@ -179,7 +182,7 @@ public class PackBuilderTests
             unit++;
         }
 
-        return $"{size:0.#} {units[unit]}";
+        return $"{size:0.#}{units[unit]}";
     }
 
     static string BuildSolution(IEnumerable<PackProjectWriter.PackProject> projects)
@@ -209,8 +212,9 @@ public class PackBuilderTests
         await Assert.That(entries).Contains($"build/{project.PackageId}.props");
         await Assert.That(entries).Contains($"build/{project.PackageId}.targets");
         await Assert.That(entries).Contains($"lib/net8.0/{project.PackageId}.dll");
-        await Assert.That(entries).Contains("analyzers/dotnet/cs/IconifyBundle.Generator.dll");
         await Assert.That(entries).Contains("tasks/IconifyBundle.Build.dll");
+        // The generator is shipped once by the IconifyBundle runtime package, not per pack.
+        await Assert.That(entries.Any(_ => _.Contains("IconifyBundle.Generator.dll"))).IsFalse();
         // Icon data ships outside the assembly; it must NOT be embedded as a resource any more.
         await Assert.That(entries.Any(_ => _.EndsWith("iconifybundle.pack.json"))).IsFalse();
         // The icons are reconstructed at build from the single .icondata; no per-icon .svg is shipped.

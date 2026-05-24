@@ -11,18 +11,25 @@
   <ItemGroup>
     <None Include="build\IconifyBundle.props" Pack="true" PackagePath="build\IconifyBundle.props" />
     <None Include="build\IconifyBundle.props" Pack="true" PackagePath="buildTransitive\IconifyBundle.props" />
+    <None Include="build\IconifyBundle.targets" Pack="true" PackagePath="build\IconifyBundle.targets" />
+    <None Include="build\IconifyBundle.targets" Pack="true" PackagePath="buildTransitive\IconifyBundle.targets" />
     <None Include="..\..\readme.md" Pack="true" PackagePath="\" Visible="false" />
     <PackageReference Include="ProjectDefaults" PrivateAssets="all" />
   </ItemGroup>
 
-  <!-- Build the generator (so its dll exists for the pack packages to ship) and dogfood it on this
-       compile. The generator is NOT packed here - it ships as an analyzer inside each IconifyBundle.<Pack>
-       package, so referencing both the runtime and a pack does not run it twice. -->
+  <!-- Build the generator (so its dll exists) and dogfood it on this compile. It is shipped in this package
+       (a neutral 'generator/' folder, NOT 'analyzers/' so it isn't auto-applied) and injected into consumers
+       as an @(Analyzer) by build/buildTransitive props - so a single reference to any pack runs it, exactly
+       once, without each pack shipping its own copy. -->
   <ItemGroup>
     <ProjectReference Include="..\IconifyBundle.Generator\IconifyBundle.Generator.csproj"
                       ReferenceOutputAssembly="false"
                       OutputItemType="Analyzer"
                       PrivateAssets="all" />
+    <None Include="..\IconifyBundle.Generator\bin\$(Configuration)\netstandard2.0\IconifyBundle.Generator.dll"
+          Pack="true"
+          PackagePath="generator"
+          Visible="false" />
   </ItemGroup>
 
 </Project>

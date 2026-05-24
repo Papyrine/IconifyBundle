@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+
+  <!-- Inject the IconifyBundle source generator (shipped in this package's generator/ folder) as an
+       analyzer, so a single reference to any IconifyBundle.<Pack> runs it. Analyzers don't flow through a
+       transitive dependency, but this .targets does (it ships to buildTransitive/), and a manual @(Analyzer)
+       add is honoured by the compiler. Added in a target (not props) so the add happens after items are
+       evaluated; the same target name in build/ and buildTransitive/ means at most one definition wins, so
+       it is added exactly once even when both are imported for a direct reference. -->
+  <Target Name="AddIconifyBundleGenerator" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <Analyzer Include="$(MSBuildThisFileDirectory)..\generator\IconifyBundle.Generator.dll" />
+    </ItemGroup>
+  </Target>
+
+</Project>

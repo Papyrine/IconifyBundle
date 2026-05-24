@@ -36,16 +36,18 @@ public static class IconRegistry
 
     internal static Icon Get(string prefix, string name)
     {
-        if (!entries.TryGetValue((prefix, name), out var entry))
+        if (entries.TryGetValue((prefix, name), out var entry))
         {
-            throw new KeyNotFoundException(
-                $"Icon '{name}' in pack '{prefix}' was not materialised. Only icons referenced through the " +
-                "strongly-typed API (e.g. a 'Pack.Member' access the source generator can see) are bundled. " +
-                "Reference the icon directly, or check the name.");
+            var body = entry.Body ?? ExtractBody(File.ReadAllText(entry.Path!));
+            return new(name, body, entry.Width, entry.Height);
         }
 
-        var body = entry.Body ?? ExtractBody(File.ReadAllText(entry.Path!));
-        return new(name, body, entry.Width, entry.Height);
+        throw new KeyNotFoundException(
+            $"""
+             Icon '{name}' in pack '{prefix}' was not materialised.
+             Only icons referenced through the strongly-typed API (e.g. a 'Pack.Member' access the source generator can see) are bundled.
+             Reference the icon directly, or check the name.
+             """);
     }
 
     // Disk-mode files are full standalone <svg> documents written by SvgBuilder; recover the inner body.

@@ -13,4 +13,7 @@
     <CompilerVisibleProperty Include="IconifyBundleMode" />
   </ItemGroup>
 
+  <!-- The generator is injected from the companion .targets (see IconifyBundle.targets); it must be added in
+       a target, not here - props evaluate all properties before items, which defeats an add-once guard. -->
+
 </Project>
