@@ -67,20 +67,28 @@ static class PackProjectWriter
         string? licenseSpdx = null;
         if (hasInfo && info.TryGetProperty("license", out var license))
         {
-            licenseTitle = license.TryGetProperty("title", out var lt) ? lt.GetString() ?? "" : "";
+            licenseTitle = ShortLicenseTitle(license.TryGetProperty("title", out var lt) ? lt.GetString() ?? "" : "");
             licenseUrl = license.TryGetProperty("url", out var lu) ? lu.GetString() : null;
             licenseSpdx = license.TryGetProperty("spdx", out var ls) ? ls.GetString() : null;
+        }
+
+        // Iconify sometimes omits the license url even when it ships an spdx id (e.g. carbon/unjs/vaadin are
+        // Apache-2.0 with no url). Fall back to the license's canonical url so the title still renders as a
+        // link in the table/readme rather than bare text.
+        if (string.IsNullOrEmpty(licenseUrl))
+        {
+            licenseUrl = CanonicalLicenseUrl(licenseSpdx);
         }
 
         // The strongly-typed pack class is compiled into the pack assembly; it carries no icon data
         // (members resolve through the runtime registry the consumer's generator populates).
         await File.WriteAllTextAsync(Path.Combine(packDir, $"{pascal}.cs"), Emitter.EmitPackClass(Manifest.Parse(prefix, dataText)));
-        await File.WriteAllTextAsync(Path.Combine(packDir, "readme.md"), BuildReadme(packageId, pascal, displayName, names.Count));
+        await File.WriteAllTextAsync(Path.Combine(packDir, "readme.md"), BuildReadme(packageId, pascal, displayName, names.Count, licenseTitle, licenseUrl));
         await File.WriteAllTextAsync(Path.Combine(buildDir, $"{packageId}.props"), BuildProps(prefix));
         await File.WriteAllTextAsync(Path.Combine(buildDir, $"{packageId}.targets"), BuildTargets(prefix, pascal));
 
         var csprojPath = Path.Combine(packDir, $"{packageId}.csproj");
-        await File.WriteAllTextAsync(csprojPath, BuildCsproj(packageId, prefix, displayName, names.Count, licenseSpdx));
+        await File.WriteAllTextAsync(csprojPath, BuildCsproj(packageId, prefix, displayName, names.Count, licenseSpdx, licenseUrl));
 
         return new(prefix, packageId, csprojPath, names.Count, licenseTitle, licenseUrl);
     }
@@ -150,30 +158,55 @@ static class PackProjectWriter
 
           """;
 
-    static string BuildReadme(string packageId, string pascal, string displayName, int total) =>
-        $"""
-         # {packageId}
+    static string BuildReadme(string packageId, string pascal, string displayName, int total, string licenseTitle, string? licenseUrl)
+    {
+        // Surface the pack's own license on its package page (some packs are share-alike / attribution -
+        // see the repo readme), not just in the aggregate table. Omit the section when Iconify gives no license.
+        var license = licenseTitle.Length == 0
+            ? ""
+            : licenseUrl is {Length: > 0} url
+                ? $"\n## License\n\n[{licenseTitle}]({url})\n"
+                : $"\n## License\n\n{licenseTitle}\n";
 
-         {displayName} ({total} icons) for [IconifyBundle](https://github.com/SimonCropp/IconifyBundle) -
-         strongly-typed [Iconify](https://iconify.design/) icons for .NET.
+        return $"""
+                # {packageId}
 
-         ```csharp
-         Icon icon = {pascal}.SomeIcon;
-         string svg = icon.Svg;
-         ```
+                {displayName} ({total} icons) for [IconifyBundle](https://github.com/SimonCropp/IconifyBundle) -
+                strongly-typed [Iconify](https://iconify.design/) icons for .NET.
 
-         A single reference to this package gives the strongly-typed `{pascal}` class with a member per icon.
+                ```csharp
+                Icon icon = {pascal}.SomeIcon;
+                string svg = icon.Svg;
+                ```
 
-         """;
+                A single reference to this package gives the strongly-typed `{pascal}` class with a member per icon.
+                {license}
+                """;
+    }
 
-    static string BuildCsproj(string packageId, string prefix, string displayName, int total, string? licenseSpdx)
+    static string BuildCsproj(string packageId, string prefix, string displayName, int total, string? licenseSpdx, string? licenseUrl)
     {
         var description = $"{displayName} ({total} icons) for IconifyBundle.";
-        // Stamp the pack's real license (SPDX) rather than assuming MIT. When Iconify supplies no SPDX,
-        // omit the expression rather than declaring a license the pack may not actually carry.
-        var licenseElement = string.IsNullOrEmpty(licenseSpdx)
-            ? ""
-            : $"\n    <PackageLicenseExpression>{licenseSpdx}</PackageLicenseExpression>";
+        // Stamp the pack's real license rather than assuming MIT. NuGet's <PackageLicenseExpression> only
+        // accepts OSI-approved / FSF-libre SPDX ids; pushing anything else is rejected (HTTP 400).
+        // PackSelection already drops GPL and non-commercial packs, so the only redistributable-but-unapproved
+        // licenses that reach here are the Creative Commons attribution family (CC-BY*, CC-BY-SA*) - CC0 is
+        // FSF-libre and stays an expression. For those, fall back to the (deprecated but still publishable)
+        // <PackageLicenseUrl> so the pack still declares its terms. When Iconify supplies neither, omit it
+        // rather than declaring a license the pack may not actually carry.
+        string licenseElement;
+        if (!string.IsNullOrEmpty(licenseSpdx) && IsNuGetLicenseExpression(licenseSpdx))
+        {
+            licenseElement = $"\n    <PackageLicenseExpression>{licenseSpdx}</PackageLicenseExpression>";
+        }
+        else if (!string.IsNullOrEmpty(licenseUrl))
+        {
+            licenseElement = $"\n    <PackageLicenseUrl>{Escape(licenseUrl)}</PackageLicenseUrl>";
+        }
+        else
+        {
+            licenseElement = "";
+        }
 
         // Absolute path to the built build-task dll; $(Configuration) resolves to the pack build's config.
         // (The generator is shipped by the IconifyBundle runtime package, not per pack.)
@@ -199,8 +232,10 @@ static class PackProjectWriter
                     <PackageReadmeFile>readme.md</PackageReadmeFile>
                     <GenerateDocumentationFile>false</GenerateDocumentationFile>
                     <!-- CS0108: an icon named e.g. "equals"/"gethashcode" yields a member that hides an object member.
-                         NU5100: the build task ships in tasks/ (not lib/) on purpose - it is an MSBuild task, not a reference. -->
-                    <NoWarn>$(NoWarn);NU5100;NU5128;CS0108</NoWarn>
+                         NU5100: the build task ships in tasks/ (not lib/) on purpose - it is an MSBuild task, not a reference.
+                         NU5125: CC-BY packs declare their license via the deprecated <PackageLicenseUrl> because NuGet
+                                 rejects those licenses in <PackageLicenseExpression> (see BuildCsproj). -->
+                    <NoWarn>$(NoWarn);NU5100;NU5125;NU5128;CS0108</NoWarn>
                   </PropertyGroup>
                   <ItemGroup>
                     <!-- The compiled pack class returns IconifyBundle.Icon and uses IconifyBundle.IconPack.
@@ -224,6 +259,35 @@ static class PackProjectWriter
 
                 """;
     }
+
+    // True when NuGet accepts the SPDX id as a <PackageLicenseExpression>. The Creative Commons attribution
+    // licenses (CC-BY*, CC-BY-SA*) are neither OSI-approved nor FSF-libre, so NuGet rejects them; CC0 (a
+    // public-domain dedication) is FSF-libre and does not start with "CC-BY", so it stays an expression.
+    static bool IsNuGetLicenseExpression(string spdx) =>
+        !spdx.StartsWith("CC-BY", StringComparison.OrdinalIgnoreCase);
+
+    // Shorten Iconify's verbose license titles to their common abbreviations for the table/readme.
+    static string ShortLicenseTitle(string title) =>
+        title switch
+        {
+            "Mozilla Public License 2.0" => "MPL 2.0",
+            "Open Font License" => "OFL",
+            _ => title
+        };
+
+    // Canonical url for a license spdx id, used when Iconify ships the id but no url so the title still renders
+    // as a link rather than bare text. Each maps to the license's authoritative reference text.
+    static string? CanonicalLicenseUrl(string? spdx) =>
+        spdx is null
+            ? null
+            : spdx.ToUpperInvariant() switch
+            {
+                "APACHE-2.0" => "https://www.apache.org/licenses/LICENSE-2.0",
+                "MPL-2.0" => "https://www.mozilla.org/en-US/MPL/2.0/",
+                "MIT" => "https://opensource.org/license/mit",
+                "OFL-1.1" => "https://openfontlicense.org/",
+                _ => null
+            };
 
     static string Escape(string value) =>
         value
