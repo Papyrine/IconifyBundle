@@ -4,7 +4,8 @@ static class GeneratorRunner
         string? data,
         bool disk,
         string prefix = "feather",
-        string source = "public class Dummy;")
+        string source = "public class Dummy;",
+        string? razor = null)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
 
@@ -14,13 +15,22 @@ static class GeneratorRunner
             references,
             new(OutputKind.DynamicallyLinkedLibrary));
 
-        ImmutableArray<AdditionalText> additionalTexts = data is null
-            ? []
-            : [new TestAdditionalText("pack.icondata", data)];
+        // Razor markup is handed to the compiler as an AdditionalFile (the Razor SDK does this so its own
+        // generator can read it); the icon data is an AdditionalFile too. Both flow through AdditionalTexts.
+        var additionalTexts = ImmutableArray.CreateBuilder<AdditionalText>();
+        if (data is not null)
+        {
+            additionalTexts.Add(new TestAdditionalText("pack.icondata", data));
+        }
+
+        if (razor is not null)
+        {
+            additionalTexts.Add(new TestAdditionalText("Component.razor", razor));
+        }
 
         var driver = CSharpGeneratorDriver.Create(
             generators: [new IconifyBundleGenerator().AsSourceGenerator()],
-            additionalTexts: additionalTexts,
+            additionalTexts: additionalTexts.ToImmutable(),
             parseOptions: parseOptions,
             optionsProvider: new TestOptionsProvider(disk, prefix));
 
@@ -56,7 +66,12 @@ static class GeneratorRunner
 
         public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => EmptyOptions.Instance;
 
-        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => new FileOptions(prefix);
+        // Only the pack data file carries the IconifyBundlePack metadata; razor files (and anything else)
+        // are plain additional files, matching how the real build tags them.
+        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) =>
+            textFile.Path.EndsWith(".icondata", StringComparison.Ordinal)
+                ? new FileOptions(prefix)
+                : EmptyOptions.Instance;
     }
 
     sealed class GlobalOptionsImpl(bool disk) : AnalyzerConfigOptions

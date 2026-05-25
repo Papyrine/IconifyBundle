@@ -47,4 +47,18 @@ public class IconifyBundleGeneratorTests
     [Test]
     public Task Disk_mode_emits_path_members_and_registers_only_used_icons() =>
         Verify(GeneratorRunner.Run(featherData, disk: true, source: usage));
+
+    // .razor markup compiles via the Razor source generator, whose output this generator never sees, so
+    // pack accesses there are found by scanning the markup text. Covers the unqualified form (the common
+    // case, after a `@using IconifyBundle`) and the fully-qualified chain.
+    const string razorUsage =
+        """
+        @namespace Demo
+        <Iconify Value="Feather.Activity" />
+        <Iconify Value="IconifyBundle.Feather.AlertCircle" />
+        """;
+
+    [Test]
+    public Task Resource_mode_detects_razor_usage() =>
+        Verify(GeneratorRunner.Run(featherData, disk: false, razor: razorUsage));
 }
