@@ -187,12 +187,12 @@ public class IconifyBundleGenerator :
     static readonly Regex memberAccess =
         new(@"([A-Za-z_][A-Za-z0-9_]*)\s*\.\s*(?=([A-Za-z_][A-Za-z0-9_]*))");
 
-    static ImmutableArray<(string ClassName, string Member)> ScanRazor(AdditionalText text, CancellationToken token)
+    static ImmutableArray<(string ClassName, string Member)> ScanRazor(AdditionalText text, Cancel token)
     {
         var content = text.GetText(token)?.ToString();
         if (string.IsNullOrEmpty(content))
         {
-            return ImmutableArray<(string, string)>.Empty;
+            return [];
         }
 
         var seen = new HashSet<(string, string)>();

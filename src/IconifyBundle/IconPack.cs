@@ -18,6 +18,13 @@ public sealed class IconPack
     public IEnumerable<string> Names => IconRegistry.Names(Prefix);
 
     /// <summary>
+    /// The icons that have been materialised for this pack in the current process, resolved lazily.
+    /// To enumerate the entire upstream pack (not just what the consumer has referenced), use
+    /// <see cref="IconifyJson.ReadPack"/> against the pack class's <see cref="Type"/>.
+    /// </summary>
+    public IEnumerable<Icon> Icons => Names.Select(name => this[name]);
+
+    /// <summary>
     /// Gets (and caches) the pack accessor for the supplied <paramref name="prefix"/>. Called by the
     /// strongly-typed pack class.
     /// </summary>

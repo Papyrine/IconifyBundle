@@ -92,6 +92,98 @@ The `<Iconify>` component renders the icon as an inline `<svg>` (extra attribute
 are splatted onto it). There is also an `Icon.ToMarkup()` extension returning a `MarkupString`.
 
 
+## Iconify JSON
+
+The static `IconifyJson` class reads and writes the [iconify JSON format](https://iconify.design/docs/types/iconify-json.html)
+- the same shape published as `@iconify-json/*` and consumed by tooling like Mermaid and Naiad - so
+IconifyBundle icons can be handed to any iconify-format consumer and arbitrary iconify JSON can be
+parsed back into `Icon`s. Three flows are supported.
+
+### Writing iconify JSON
+
+Serialise any set of `Icon`s under a chosen prefix as iconify-format JSON - to a string, a stream, or a
+file (sync and async). Width/height shared by every icon are hoisted to the top level and omitted
+per-icon (the canonical shape; pass `IconifyJsonOptions { HoistCommonSize = false }` to opt out).
+
+<!-- snippet: IconifyJsonSerialise -->
+<a id='snippet-IconifyJsonSerialise'></a>
+```cs
+// Pick the icons you want (strongly-typed members from any IconifyBundle.<Pack> work here,
+// e.g. Feather.Box, AntDesign.HomeOutlined - constructed inline for the snippet).
+var box = new Icon("box", """<path d="M3 3h18v18H3z"/>""", 24, 24);
+var ring = new Icon("ring", """<circle cx="12" cy="12" r="8"/>""", 24, 24);
+
+// As a JSON string under a chosen prefix...
+var json = IconifyJson.Serialize("sample", box, ring);
+
+// ...or as a stream (handy for feeding into a consumer that takes iconify JSON, e.g.
+// Naiad's IconPack.Load).
+using var stream = IconifyJson.OpenReadStream("sample", box, ring);
+
+// ...or write directly to a file (sync/async).
+IconifyJson.WriteToFile("sample.json", "sample", [box, ring]);
+```
+<sup><a href='/src/Tests/Snippets.cs#L27-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-IconifyJsonSerialise' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Options: `Indented` (pretty-print, default off), `HoistCommonSize`, and `Info` (the iconify `info`
+block: name, author, license). Equivalent `IconPack` overloads serialise the materialised icons of a
+runtime pack, e.g. `IconifyJson.Serialize(IconPack.ForPrefix("feather"))`.
+
+### Reading iconify JSON
+
+Parse iconify JSON (from a string, stream, or file) into an `IconifyPack` - the prefix, the icons,
+and any `info` block:
+
+<!-- snippet: IconifyJsonRead -->
+<a id='snippet-IconifyJsonRead'></a>
+```cs
+// Parse iconify-format JSON back into an IconifyPack (prefix + icons + optional info).
+const string source =
+    """
+    {"prefix":"sample","width":24,"height":24,"icons":{"box":{"body":"<rect/>"}}}
+    """;
+var pack = IconifyJson.Parse(source);
+
+Console.WriteLine(pack.Prefix);                 // "sample"
+Console.WriteLine(pack.Icons.Count);            // 1
+foreach (var icon in pack.Icons)
+{
+    Console.WriteLine($"{icon.Name}: {icon.Body} ({icon.Width}x{icon.Height})");
+}
+```
+<sup><a href='/src/Tests/Snippets.cs#L50-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-IconifyJsonRead' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Per-icon `width`/`height` fall back to the top-level defaults (16×16 if neither is specified, matching
+the iconify spec).
+
+### Upstream pack passthrough
+
+Every `IconifyBundle.<Pack>` assembly embeds its full upstream pack data as a manifest resource, so
+the entire `@iconify-json/<pack>` dataset is available at runtime - not only the icons a consumer
+has materialised. Pass the pack class to `IconifyJson.OpenPackStream` / `ReadPack`:
+
+<!-- snippet: IconifyJsonUpstream -->
+<a id='snippet-IconifyJsonUpstream'></a>
+```cs
+// Open the full upstream pack data embedded in any IconifyBundle.<Pack> assembly. Pass the
+// strongly-typed pack class (e.g. typeof(Feather)) - the result is the entire
+// @iconify-json/<pack> dataset, not just the icons your project has materialised.
+using var stream = IconifyJson.OpenPackStream(packClass);
+
+// Or get the parsed pack back directly.
+var pack = IconifyJson.ReadPack(packClass);
+Console.WriteLine($"{pack.Prefix}: {pack.Icons.Count} icons");
+```
+<sup><a href='/src/Tests/Snippets.cs#L69-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-IconifyJsonUpstream' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Use this when the whole pack is needed (for example handing the full Feather set to Naiad's
+`IconPack.Load`); for a slim, build-time-checked subset, prefer the write APIs above with the
+strongly-typed members directly (e.g. `IconifyJson.OpenReadStream("feather", Feather.Box, Feather.Database)`).
+
+
 ## Building locally
 
 ```
