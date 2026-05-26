@@ -5,7 +5,8 @@
        icons the consumer has materialised. Every pack assembly exposes the resource under the same
        logical name so a single lookup works across packs. -->
   <ItemGroup>
-    <EmbeddedResource Include="$(MSBuildProjectDirectory)\*.icondata">
+    <!-- Bare relative glob (no path separator) so it resolves the same on Windows and Linux/CI. -->
+    <EmbeddedResource Include="*.icondata">
       <LogicalName>IconifyBundle.icondata</LogicalName>
     </EmbeddedResource>
   </ItemGroup>

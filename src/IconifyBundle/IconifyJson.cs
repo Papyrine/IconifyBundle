@@ -197,10 +197,6 @@ public static class IconifyJson
         return ReadIcondata(stream);
     }
 
-    // ------------------------------------------------------------------
-    // Internal helpers
-    // ------------------------------------------------------------------
-
     static JsonWriterOptions WriterOptions(IconifyJsonOptions options) =>
         options.Indented
             ? defaultWriterOptions with { Indented = true }
