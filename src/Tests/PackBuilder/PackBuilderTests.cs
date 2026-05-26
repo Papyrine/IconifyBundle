@@ -225,10 +225,21 @@ public class PackBuilderTests
     static void WritePacksScaffolding()
     {
         // Halt Directory.Build.props / Directory.Packages.props traversal so generated pack projects
-        // are self-contained and do not inherit the strict src/ build settings.
+        // are self-contained and do not inherit the strict src/ build settings - but also embed each
+        // pack's *.icondata into its compiled assembly as a uniform manifest resource so the runtime
+        // (IconifyJson.OpenPackStream / ReadPack) can serve the full upstream pack data.
         File.WriteAllText(
             Path.Combine(RepoPaths.Packs, "Directory.Build.props"),
-            "<Project />\n");
+            """
+            <Project>
+              <ItemGroup>
+                <EmbeddedResource Include="*.icondata">
+                  <LogicalName>IconifyBundle.icondata</LogicalName>
+                </EmbeddedResource>
+              </ItemGroup>
+            </Project>
+
+            """);
         File.WriteAllText(
             Path.Combine(RepoPaths.Packs, "Directory.Packages.props"),
             """
