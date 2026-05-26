@@ -40,6 +40,33 @@ public class ConsumeTests
         await Assert.That(pack.Contains("activity")).IsTrue();
     }
 
+    [Test]
+    public async Task IconifyJson_serialise_strongly_typed()
+    {
+        #region IconifyJsonSerialise
+        // The strongly-typed members from any IconifyBundle.<Pack> (e.g. Feather.Box,
+        // AntDesign.HomeOutlined) are the icons - just pass them in. Each Icon carries its pack
+        // prefix, so the prefix is derived from the icons - no need to pass it.
+
+        // As a JSON string...
+        var json = IconifyJson.Serialize(Feather.Box, Feather.Database);
+
+        // ...or as a stream (handy for feeding into a consumer that takes iconify JSON, e.g.
+        // Naiad's IconPack.Load).
+        using var stream = IconifyJson.OpenReadStream(Feather.Box, Feather.Database);
+
+        // ...or write directly to a file (sync/async).
+        IconifyJson.WriteToFile("sample.json", [Feather.Box, Feather.Database]);
+        #endregion
+
+        await Assert.That(json).Contains("\"prefix\":\"feather\"");
+        await Assert.That(json).Contains("\"box\"");
+        await Assert.That(json).Contains("\"database\"");
+        await Assert.That(stream.Length).IsGreaterThan(0);
+        await Assert.That(File.Exists("sample.json")).IsTrue();
+        File.Delete("sample.json");
+    }
+
     // ...but throws for an icon that was never referenced statically (and so was tree-shaken away).
     [Test]
     public async Task Dynamic_lookup_throws_for_unmaterialised_icon()

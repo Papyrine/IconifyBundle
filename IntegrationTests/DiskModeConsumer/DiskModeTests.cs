@@ -27,11 +27,9 @@ public class DiskModeTests
     [Test]
     public async Task IconifyJson_stream_for_picked_icons()
     {
-        #region IconifyJsonFeatherSubset
         // Every Icon carries its pack Prefix, so IconifyJson derives "feather" from the icons
         // themselves - no separate prefix argument needed.
         using var stream = IconifyJson.OpenReadStream(Feather.Box, Feather.Database);
-        #endregion
 
         using var reader = new StreamReader(stream);
         var json = await reader.ReadToEndAsync();
