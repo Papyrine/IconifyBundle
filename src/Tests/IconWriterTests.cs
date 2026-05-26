@@ -11,7 +11,7 @@ public class IconWriterTests
     {
         const string body = """<path stroke="currentColor" d="M1 1"/>""";
 
-        var expected = SvgBuilder.Build(new("activity", body, width, height));
+        var expected = SvgBuilder.Build(new("feather", "activity", body, width, height));
         await Assert.That(IconWriter.BuildSvg(width, height, body)).IsEqualTo(expected);
     }
 
@@ -51,7 +51,7 @@ public class IconWriterTests
         var activity = Path.Combine(outDir, "activity.svg");
         await Assert.That(File.Exists(activity)).IsTrue();
         await Assert.That(await File.ReadAllTextAsync(activity))
-            .IsEqualTo(SvgBuilder.Build(new("activity", "<path d=\"M1 1\"/>", 24, 24)));
+            .IsEqualTo(SvgBuilder.Build(new("feather", "activity", "<path d=\"M1 1\"/>", 24, 24)));
         // 'zap' exists in the pack but was not requested - not written.
         await Assert.That(File.Exists(Path.Combine(outDir, "zap.svg"))).IsFalse();
         // 'ghost' was requested but is not in the pack - reported as missing.

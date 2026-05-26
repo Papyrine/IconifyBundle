@@ -4,8 +4,9 @@ static class Snippets
     public static void RuntimeUsage()
     {
         #region RuntimeUsage
-        // An Icon carries the inner SVG body and intrinsic size.
+        // An Icon carries the pack prefix, the icon name, the inner SVG body, and intrinsic size.
         var icon = new Icon(
+            "feather",
             "activity",
             """<path stroke="currentColor" d="M12 2v20"/>""",
             24,
@@ -26,19 +27,20 @@ static class Snippets
     {
         #region IconifyJsonSerialise
         // Pick the icons you want (strongly-typed members from any IconifyBundle.<Pack> work here,
-        // e.g. Feather.Box, AntDesign.HomeOutlined - constructed inline for the snippet).
-        var box = new Icon("box", """<path d="M3 3h18v18H3z"/>""", 24, 24);
-        var ring = new Icon("ring", """<circle cx="12" cy="12" r="8"/>""", 24, 24);
+        // e.g. Feather.Box, AntDesign.HomeOutlined - constructed inline for the snippet). Each icon
+        // carries its pack prefix, so the prefix is derived from the icons - no need to pass it.
+        var box = new Icon("sample", "box", """<path d="M3 3h18v18H3z"/>""", 24, 24);
+        var ring = new Icon("sample", "ring", """<circle cx="12" cy="12" r="8"/>""", 24, 24);
 
-        // As a JSON string under a chosen prefix...
-        var json = IconifyJson.Serialize("sample", box, ring);
+        // As a JSON string...
+        var json = IconifyJson.Serialize(box, ring);
 
         // ...or as a stream (handy for feeding into a consumer that takes iconify JSON, e.g.
         // Naiad's IconPack.Load).
-        using var stream = IconifyJson.OpenReadStream("sample", box, ring);
+        using var stream = IconifyJson.OpenReadStream(box, ring);
 
         // ...or write directly to a file (sync/async).
-        IconifyJson.WriteToFile("sample.json", "sample", [box, ring]);
+        IconifyJson.WriteToFile("sample.json", [box, ring]);
         #endregion
 
         Console.WriteLine(json.Length);

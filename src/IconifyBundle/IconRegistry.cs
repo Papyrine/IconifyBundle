@@ -39,7 +39,7 @@ public static class IconRegistry
         if (entries.TryGetValue((prefix, name), out var entry))
         {
             var body = entry.Body ?? ExtractBody(File.ReadAllText(entry.Path!));
-            return new(name, body, entry.Width, entry.Height);
+            return new(prefix, name, body, entry.Width, entry.Height);
         }
 
         throw new KeyNotFoundException(

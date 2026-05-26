@@ -1,6 +1,6 @@
 public class SvgBuilderTests
 {
-    static readonly Icon sample = new("activity", "<path d=\"M1 1\"/>", 24, 24);
+    static readonly Icon sample = new("sample", "activity", "<path d=\"M1 1\"/>", 24, 24);
 
     [Test]
     public async Task Build_default_uses_intrinsic_size() =>

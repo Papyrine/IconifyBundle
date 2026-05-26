@@ -1,33 +1,33 @@
 public class IconifyJsonTests
 {
-    static readonly Icon box = new("box", """<path d="M1 1h22v22H1z"/>""", 24, 24);
-    static readonly Icon database = new("database", """<ellipse cx="12" cy="5" rx="9" ry="3"/>""", 24, 24);
-    static readonly Icon star = new("star", """<polygon points="12,2 15,9 22,9"/>""", 32, 32);
+    static readonly Icon box = new("sample", "box", """<path d="M1 1h22v22H1z"/>""", 24, 24);
+    static readonly Icon database = new("sample", "database", """<ellipse cx="12" cy="5" rx="9" ry="3"/>""", 24, 24);
+    static readonly Icon star = new("sample", "star", """<polygon points="12,2 15,9 22,9"/>""", 32, 32);
 
     [Test]
     public Task Serialize_hoists_common_size() =>
-        Verify(IconifyJson.Serialize("sample", box, database), extension: "json");
+        Verify(IconifyJson.Serialize(box, database), extension: "json");
 
     [Test]
     public Task Serialize_indented() =>
         Verify(
-            IconifyJson.Serialize("sample", [box, database], new() { Indented = true }),
+            IconifyJson.Serialize([box, database], new() { Indented = true }),
             extension: "json");
 
     [Test]
     public Task Serialize_writes_per_icon_size_when_varying() =>
-        Verify(IconifyJson.Serialize("sample", box, star), extension: "json");
+        Verify(IconifyJson.Serialize(box, star), extension: "json");
 
     [Test]
     public Task Serialize_writes_per_icon_size_when_hoist_opted_out() =>
         Verify(
-            IconifyJson.Serialize("sample", [box, database], new() { HoistCommonSize = false }),
+            IconifyJson.Serialize([box, database], new() { HoistCommonSize = false }),
             extension: "json");
 
     [Test]
     public Task Serialize_with_info() =>
         Verify(
-            IconifyJson.Serialize("sample", [box], new()
+            IconifyJson.Serialize([box], new()
             {
                 Indented = true,
                 Info = new("Sample Pack", "Test Author", "MIT")
@@ -35,35 +35,46 @@ public class IconifyJsonTests
             extension: "json");
 
     [Test]
-    public async Task Serialize_throws_on_empty_prefix() =>
-        await Assert.That(() => IconifyJson.Serialize("", box))
+    public async Task Serialize_throws_on_missing_prefix()
+    {
+        var noPrefix = new Icon("", "box", "<path/>", 24, 24);
+        await Assert.That(() => IconifyJson.Serialize(noPrefix))
             .Throws<ArgumentException>();
+    }
 
     [Test]
     public async Task Serialize_throws_on_no_icons() =>
-        await Assert.That(() => IconifyJson.Serialize("sample"))
+        await Assert.That(() => IconifyJson.Serialize())
             .Throws<ArgumentException>();
 
     [Test]
     public async Task Serialize_throws_on_duplicate_name() =>
-        await Assert.That(() => IconifyJson.Serialize("sample", box, box))
+        await Assert.That(() => IconifyJson.Serialize(box, box))
             .Throws<ArgumentException>();
 
     [Test]
     public async Task Serialize_throws_on_default_icon() =>
-        await Assert.That(() => IconifyJson.Serialize("sample", default(Icon)))
+        await Assert.That(() => IconifyJson.Serialize(default(Icon)))
             .Throws<ArgumentException>();
+
+    [Test]
+    public async Task Serialize_throws_on_mixed_prefixes()
+    {
+        var other = new Icon("other", "box", """<path d="M1 1h22v22H1z"/>""", 24, 24);
+        await Assert.That(() => IconifyJson.Serialize(box, other))
+            .Throws<ArgumentException>();
+    }
 
     [Test]
     public async Task OpenReadStream_yields_seekable_utf8_stream()
     {
-        await using var stream = IconifyJson.OpenReadStream("sample", box);
+        await using var stream = IconifyJson.OpenReadStream(box);
         await Assert.That(stream.CanSeek).IsTrue();
         await Assert.That(stream.Position).IsEqualTo(0);
 
         using var reader = new StreamReader(stream);
         var text = await reader.ReadToEndAsync();
-        await Assert.That(text).IsEqualTo(IconifyJson.Serialize("sample", box));
+        await Assert.That(text).IsEqualTo(IconifyJson.Serialize(box));
     }
 
     [Test]
@@ -72,9 +83,9 @@ public class IconifyJsonTests
         var path = Path.Combine(Path.GetTempPath(), $"iconify-{Guid.NewGuid():N}.json");
         try
         {
-            await IconifyJson.WriteToFileAsync(path, "sample", [box, database]);
+            await IconifyJson.WriteToFileAsync(path, [box, database]);
             var text = await File.ReadAllTextAsync(path);
-            await Assert.That(text).IsEqualTo(IconifyJson.Serialize("sample", box, database));
+            await Assert.That(text).IsEqualTo(IconifyJson.Serialize(box, database));
         }
         finally
         {
@@ -92,6 +103,7 @@ public class IconifyJsonTests
 
         await Assert.That(pack.Prefix).IsEqualTo("sample");
         await Assert.That(pack.Icons.Count).IsEqualTo(1);
+        await Assert.That(pack.Icons[0].Prefix).IsEqualTo("sample");
         await Assert.That(pack.Icons[0].Name).IsEqualTo("box");
         await Assert.That(pack.Icons[0].Body).IsEqualTo("<rect/>");
         await Assert.That(pack.Icons[0].Width).IsEqualTo(24d);
@@ -134,13 +146,14 @@ public class IconifyJsonTests
     [Test]
     public async Task Round_trip_hoisted_pack()
     {
-        var json = IconifyJson.Serialize("sample", box, database);
+        var json = IconifyJson.Serialize(box, database);
         var pack = IconifyJson.Parse(json);
 
         await Assert.That(pack.Prefix).IsEqualTo("sample");
         await Assert.That(pack.Icons.Count).IsEqualTo(2);
 
         var roundTripped = pack.Icons.ToDictionary(i => i.Name);
+        await Assert.That(roundTripped["box"].Prefix).IsEqualTo("sample");
         await Assert.That(roundTripped["box"].Body).IsEqualTo(box.Body);
         await Assert.That(roundTripped["box"].Width).IsEqualTo(box.Width);
         await Assert.That(roundTripped["box"].Height).IsEqualTo(box.Height);
@@ -150,7 +163,7 @@ public class IconifyJsonTests
     [Test]
     public async Task Round_trip_varying_sizes()
     {
-        var json = IconifyJson.Serialize("sample", box, star);
+        var json = IconifyJson.Serialize(box, star);
         var pack = IconifyJson.Parse(json);
 
         var roundTripped = pack.Icons.ToDictionary(i => i.Name);
@@ -163,7 +176,7 @@ public class IconifyJsonTests
     public async Task Round_trip_async_to_stream()
     {
         using var buffer = new MemoryStream();
-        await IconifyJson.WriteToAsync(buffer, "sample", [box, database]);
+        await IconifyJson.WriteToAsync(buffer, [box, database]);
         buffer.Position = 0;
         var pack = await IconifyJson.ReadAsync(buffer);
         await Assert.That(pack.Icons.Count).IsEqualTo(2);
@@ -211,6 +224,7 @@ public class IconifyJsonTests
         await Assert.That(pack.Icons.Count).IsEqualTo(286);
 
         var activity = pack.Icons.First(i => i.Name == "activity");
+        await Assert.That(activity.Prefix).IsEqualTo("feather");
         await Assert.That(activity.Width).IsEqualTo(24d);
         await Assert.That(activity.Height).IsEqualTo(24d);
         await Assert.That(activity.Body.Contains("M22 12h-4")).IsTrue();

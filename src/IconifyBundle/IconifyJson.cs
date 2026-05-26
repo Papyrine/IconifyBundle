@@ -25,61 +25,67 @@ public static class IconifyJson
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
-    /// <summary>Serialises <paramref name="icons"/> under <paramref name="prefix"/> as iconify-format JSON.</summary>
-    public static string Serialize(string prefix, IEnumerable<Icon> icons, IconifyJsonOptions? options = null)
+    /// <summary>
+    /// Serialises <paramref name="icons"/> as iconify-format JSON. All icons must share a single
+    /// <see cref="Icon.Prefix"/>, which becomes the pack's <c>prefix</c>.
+    /// </summary>
+    public static string Serialize(IEnumerable<Icon> icons, IconifyJsonOptions? options = null)
     {
         using var buffer = new MemoryStream();
-        WriteTo(buffer, prefix, icons, options);
+        WriteTo(buffer, icons, options);
         return Encoding.UTF8.GetString(buffer.GetBuffer(), 0, (int)buffer.Length);
     }
 
-    /// <summary>Serialises <paramref name="icons"/> under <paramref name="prefix"/> as iconify-format JSON.</summary>
-    public static string Serialize(string prefix, params Icon[] icons) =>
-        Serialize(prefix, (IEnumerable<Icon>)icons);
+    /// <summary>
+    /// Serialises <paramref name="icons"/> as iconify-format JSON. All icons must share a single
+    /// <see cref="Icon.Prefix"/>, which becomes the pack's <c>prefix</c>.
+    /// </summary>
+    public static string Serialize(params Icon[] icons) =>
+        Serialize((IEnumerable<Icon>)icons);
 
     /// <summary>
     /// Returns a readable, seekable UTF-8 stream over the iconify-format JSON. Position is 0; caller disposes.
+    /// All icons must share a single <see cref="Icon.Prefix"/>.
     /// </summary>
-    public static Stream OpenReadStream(string prefix, IEnumerable<Icon> icons, IconifyJsonOptions? options = null)
+    public static Stream OpenReadStream(IEnumerable<Icon> icons, IconifyJsonOptions? options = null)
     {
         var buffer = new MemoryStream();
-        WriteTo(buffer, prefix, icons, options);
+        WriteTo(buffer, icons, options);
         buffer.Position = 0;
         return buffer;
     }
 
     /// <summary>
     /// Returns a readable, seekable UTF-8 stream over the iconify-format JSON. Position is 0; caller disposes.
+    /// All icons must share a single <see cref="Icon.Prefix"/>.
     /// </summary>
-    public static Stream OpenReadStream(string prefix, params Icon[] icons) =>
-        OpenReadStream(prefix, (IEnumerable<Icon>)icons);
+    public static Stream OpenReadStream(params Icon[] icons) =>
+        OpenReadStream((IEnumerable<Icon>)icons);
 
     /// <summary>
-    /// Writes iconify-format JSON for <paramref name="icons"/> under <paramref name="prefix"/> to
-    /// <paramref name="destination"/>. Does not close the stream.
+    /// Writes iconify-format JSON for <paramref name="icons"/> to <paramref name="destination"/>. Does not
+    /// close the stream. All icons must share a single <see cref="Icon.Prefix"/>.
     /// </summary>
     public static void WriteTo(
         Stream destination,
-        string prefix,
         IEnumerable<Icon> icons,
         IconifyJsonOptions? options = null)
     {
         options ??= new();
-        var iconList = ValidateAndMaterialise(prefix, icons);
+        var (prefix, iconList) = ValidateAndMaterialise(icons);
         using var writer = new Utf8JsonWriter(destination, WriterOptions(options));
         WriteRoot(writer, prefix, iconList, options);
     }
 
-    /// <summary>Async overload of <see cref="WriteTo(Stream,string,IEnumerable{Icon},IconifyJsonOptions)"/>.</summary>
+    /// <summary>Async overload of <see cref="WriteTo(Stream,IEnumerable{Icon},IconifyJsonOptions)"/>.</summary>
     public static async Task WriteToAsync(
         Stream destination,
-        string prefix,
         IEnumerable<Icon> icons,
         IconifyJsonOptions? options = null,
         Cancel cancel = default)
     {
         options ??= new();
-        var iconList = ValidateAndMaterialise(prefix, icons);
+        var (prefix, iconList) = ValidateAndMaterialise(icons);
         await using var writer = new Utf8JsonWriter(destination, WriterOptions(options));
         WriteRoot(writer, prefix, iconList, options);
         await writer.FlushAsync(cancel);
@@ -88,37 +94,35 @@ public static class IconifyJson
     /// <summary>Writes the iconify-format JSON to a file (overwriting any existing file).</summary>
     public static void WriteToFile(
         string path,
-        string prefix,
         IEnumerable<Icon> icons,
         IconifyJsonOptions? options = null)
     {
         using var stream = File.Create(path);
-        WriteTo(stream, prefix, icons, options);
+        WriteTo(stream, icons, options);
     }
 
-    /// <summary>Async overload of <see cref="WriteToFile(string,string,IEnumerable{Icon},IconifyJsonOptions)"/>.</summary>
+    /// <summary>Async overload of <see cref="WriteToFile(string,IEnumerable{Icon},IconifyJsonOptions)"/>.</summary>
     public static async Task WriteToFileAsync(
         string path,
-        string prefix,
         IEnumerable<Icon> icons,
         IconifyJsonOptions? options = null,
         Cancel cancel = default)
     {
         await using var stream = File.Create(path);
-        await WriteToAsync(stream, prefix, icons, options, cancel);
+        await WriteToAsync(stream, icons, options, cancel);
     }
 
     /// <summary>Serialises the materialised icons of <paramref name="pack"/> as iconify-format JSON.</summary>
     public static string Serialize(IconPack pack, IconifyJsonOptions? options = null) =>
-        Serialize(pack.Prefix, pack.Icons, options);
+        Serialize(pack.Icons, options);
 
     /// <summary>Returns a readable, seekable UTF-8 stream over the iconify JSON for <paramref name="pack"/>.</summary>
     public static Stream OpenReadStream(IconPack pack, IconifyJsonOptions? options = null) =>
-        OpenReadStream(pack.Prefix, pack.Icons, options);
+        OpenReadStream(pack.Icons, options);
 
     /// <summary>Writes iconify-format JSON for <paramref name="pack"/> to <paramref name="destination"/>.</summary>
     public static void WriteTo(Stream destination, IconPack pack, IconifyJsonOptions? options = null) =>
-        WriteTo(destination, pack.Prefix, pack.Icons, options);
+        WriteTo(destination, pack.Icons, options);
 
     /// <summary>Async overload of <see cref="WriteTo(Stream,IconPack,IconifyJsonOptions)"/>.</summary>
     public static Task WriteToAsync(
@@ -126,11 +130,11 @@ public static class IconifyJson
         IconPack pack,
         IconifyJsonOptions? options = null,
         Cancel cancel = default) =>
-        WriteToAsync(destination, pack.Prefix, pack.Icons, options, cancel);
+        WriteToAsync(destination, pack.Icons, options, cancel);
 
     /// <summary>Writes the iconify-format JSON for <paramref name="pack"/> to a file (overwriting).</summary>
     public static void WriteToFile(string path, IconPack pack, IconifyJsonOptions? options = null) =>
-        WriteToFile(path, pack.Prefix, pack.Icons, options);
+        WriteToFile(path, pack.Icons, options);
 
     /// <summary>Async overload of <see cref="WriteToFile(string,IconPack,IconifyJsonOptions)"/>.</summary>
     public static Task WriteToFileAsync(
@@ -138,7 +142,7 @@ public static class IconifyJson
         IconPack pack,
         IconifyJsonOptions? options = null,
         Cancel cancel = default) =>
-        WriteToFileAsync(path, pack.Prefix, pack.Icons, options, cancel);
+        WriteToFileAsync(path, pack.Icons, options, cancel);
 
     /// <summary>Parses iconify-format JSON from <paramref name="source"/>.</summary>
     public static IconifyPack Read(Stream source)
@@ -179,7 +183,7 @@ public static class IconifyJson
     public static Stream OpenPackStream(Type packClass)
     {
         var pack = ReadPack(packClass);
-        return OpenReadStream(pack.Prefix, pack.Icons);
+        return OpenReadStream(pack.Icons);
     }
 
     /// <summary>
@@ -202,17 +206,20 @@ public static class IconifyJson
             ? defaultWriterOptions with { Indented = true }
             : defaultWriterOptions;
 
-    static List<Icon> ValidateAndMaterialise(string prefix, IEnumerable<Icon> icons)
+    static (string Prefix, List<Icon> Icons) ValidateAndMaterialise(IEnumerable<Icon> icons)
     {
-        if (string.IsNullOrWhiteSpace(prefix))
-        {
-            throw new ArgumentException("Prefix must not be empty.", nameof(prefix));
-        }
-
         var list = icons.ToList();
         if (list.Count == 0)
         {
             throw new ArgumentException("At least one icon is required.", nameof(icons));
+        }
+
+        var prefix = list[0].Prefix;
+        if (string.IsNullOrWhiteSpace(prefix))
+        {
+            throw new ArgumentException(
+                $"Icon '{list[0].Name}' has no prefix (likely a default(Icon) or constructed without one).",
+                nameof(icons));
         }
 
         var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -225,6 +232,13 @@ public static class IconifyJson
                     nameof(icons));
             }
 
+            if (!string.Equals(icon.Prefix, prefix, StringComparison.Ordinal))
+            {
+                throw new ArgumentException(
+                    $"Icons must all share one prefix; got '{prefix}' and '{icon.Prefix}' (icon '{icon.Name}').",
+                    nameof(icons));
+            }
+
             if (!seen.Add(icon.Name))
             {
                 throw new ArgumentException(
@@ -233,7 +247,7 @@ public static class IconifyJson
             }
         }
 
-        return list;
+        return (prefix, list);
     }
 
     static void WriteRoot(Utf8JsonWriter writer, string prefix, List<Icon> icons, IconifyJsonOptions options)
@@ -322,7 +336,7 @@ public static class IconifyJson
                     : "";
                 var iconWidth = iconObj.TryGetProperty("width", out var iw) ? iw.GetDouble() : defaultWidth;
                 var iconHeight = iconObj.TryGetProperty("height", out var ih) ? ih.GetDouble() : defaultHeight;
-                icons.Add(new(entry.Name, body, iconWidth, iconHeight));
+                icons.Add(new(prefix, entry.Name, body, iconWidth, iconHeight));
             }
         }
 
@@ -388,7 +402,12 @@ public static class IconifyJson
                 continue;
             }
 
-            icons.Add(new(parts[0], Unescape(parts[3]), width, height));
+            if (prefix is null)
+            {
+                throw new FormatException("Embedded icondata is missing a 'prefix' header.");
+            }
+
+            icons.Add(new(prefix, parts[0], Unescape(parts[3]), width, height));
         }
 
         if (prefix is null)

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using IconifyBundle;
 
 namespace DiskModeConsumer;
 
@@ -21,6 +22,22 @@ public class DiskModeTests
     {
         await Assert.That(Feather.Activity.Svg.Contains("<svg")).IsTrue();
         await Assert.That(Feather.AlertCircle.Name).IsEqualTo("alert-circle");
+    }
+
+    [Test]
+    public async Task IconifyJson_stream_for_picked_icons()
+    {
+        #region IconifyJsonFeatherSubset
+        // Every Icon carries its pack Prefix, so IconifyJson derives "feather" from the icons
+        // themselves - no separate prefix argument needed.
+        using var stream = IconifyJson.OpenReadStream(Feather.Box, Feather.Database);
+        #endregion
+
+        using var reader = new StreamReader(stream);
+        var json = await reader.ReadToEndAsync();
+        await Assert.That(json).Contains("\"prefix\":\"feather\"");
+        await Assert.That(json).Contains("\"box\"");
+        await Assert.That(json).Contains("\"database\"");
     }
 
     // dotnet publish must carry the used SVGs into the publish output (not just the build output).

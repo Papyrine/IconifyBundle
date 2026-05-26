@@ -1,16 +1,20 @@
 namespace IconifyBundle;
 
 /// <summary>
-/// A single resolved icon: its <see cref="Name"/>, the inner SVG <see cref="Body"/> markup
-/// (which uses <c>currentColor</c> so it inherits the surrounding text color), and the icon's
-/// intrinsic <see cref="Width"/>/<see cref="Height"/>.
+/// A single resolved icon: its <see cref="Prefix"/> (the iconify pack it belongs to, e.g. <c>feather</c>),
+/// <see cref="Name"/>, the inner SVG <see cref="Body"/> markup (which uses <c>currentColor</c> so it
+/// inherits the surrounding text color), and the icon's intrinsic <see cref="Width"/>/<see cref="Height"/>.
 /// </summary>
 public readonly struct Icon(
+    string prefix,
     string name,
     [StringSyntax(StringSyntaxAttribute.Xml)] string body,
     double width,
     double height)
 {
+    /// <summary>The iconify pack prefix this icon belongs to, e.g. <c>feather</c>.</summary>
+    public string Prefix { get; } = prefix;
+
     /// <summary>The icon name within its pack, e.g. <c>activity</c>.</summary>
     public string Name { get; } = name;
 
