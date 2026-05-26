@@ -3,7 +3,7 @@ namespace IconifyBundle.Web.Tests;
 [TestFixture]
 public class IconComponentTests : BunitContext
 {
-    static readonly Icon Sample = new("activity", "<path stroke=\"currentColor\" d=\"M1 1\"/>", 24, 24);
+    static readonly Icon Sample = new("feather", "activity", "<path stroke=\"currentColor\" d=\"M1 1\"/>", 24, 24);
 
     [Test]
     public void Renders_inline_svg()
