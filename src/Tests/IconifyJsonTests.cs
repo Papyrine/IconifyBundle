@@ -19,6 +19,12 @@ public class IconifyJsonTests
         Verify(IconifyJson.Serialize("sample", box, star), extension: "json");
 
     [Test]
+    public Task Serialize_writes_per_icon_size_when_hoist_opted_out() =>
+        Verify(
+            IconifyJson.Serialize("sample", [box, database], new() { HoistCommonSize = false }),
+            extension: "json");
+
+    [Test]
     public Task Serialize_with_info() =>
         Verify(
             IconifyJson.Serialize("sample", [box], new()

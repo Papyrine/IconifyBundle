@@ -126,9 +126,10 @@ IconifyJson.WriteToFile("sample.json", "sample", [box, ring]);
 <sup><a href='/src/Tests/Snippets.cs#L27-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-IconifyJsonSerialise' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Options: `Indented` (pretty-print, default off), `HoistCommonSize`, and `Info` (the iconify `info`
-block: name, author, license). Equivalent `IconPack` overloads serialise the materialised icons of a
-runtime pack, e.g. `IconifyJson.Serialize(IconPack.ForPrefix("feather"))`.
+Options: `Indented` (pretty-print, default off), `HoistCommonSize` (default on - factor a shared
+width/height up to the pack root; set `false` to keep dimensions on every icon even when they match),
+and `Info` (the iconify `info` block: name, author, license). Equivalent `IconPack` overloads
+serialise the materialised icons of a runtime pack, e.g. `IconifyJson.Serialize(IconPack.ForPrefix("feather"))`.
 
 ### Reading iconify JSON
 
