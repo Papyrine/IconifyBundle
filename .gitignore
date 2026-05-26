@@ -7,7 +7,8 @@ artifacts/
 
 ## Locally built nuget packages, generated pack projects, and the Replicant download cache
 nugets/
-packs/
+packs/*
+!packs/Directory.Build.props
 .cache/
 
 ## Verify
