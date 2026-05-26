@@ -164,24 +164,25 @@ static class PackProjectWriter
         // see the repo readme), not just in the aggregate table. Omit the section when Iconify gives no license.
         var license = licenseTitle.Length == 0
             ? ""
-            : licenseUrl is {Length: > 0} url
-                ? $"\n## License\n\n[{licenseTitle}]({url})\n"
+            : licenseUrl is {Length: > 0}
+                ? $"\n## License\n\n[{licenseTitle}]({licenseUrl})\n"
                 : $"\n## License\n\n{licenseTitle}\n";
 
-        return $"""
-                # {packageId}
+        return
+            $"""
+             # {packageId}
 
-                {displayName} ({total} icons) for [IconifyBundle](https://github.com/SimonCropp/IconifyBundle) -
-                strongly-typed [Iconify](https://iconify.design/) icons for .NET.
+             {displayName} ({total} icons) for [IconifyBundle](https://github.com/SimonCropp/IconifyBundle) -
+             strongly-typed [Iconify](https://iconify.design/) icons for .NET.
 
-                ```csharp
-                Icon icon = {pascal}.SomeIcon;
-                string svg = icon.Svg;
-                ```
+             ```csharp
+             Icon icon = {pascal}.SomeIcon;
+             string svg = icon.Svg;
+             ```
 
-                A single reference to this package gives the strongly-typed `{pascal}` class with a member per icon.
-                {license}
-                """;
+             A single reference to this package gives the strongly-typed `{pascal}` class with a member per icon.
+             {license}
+             """;
     }
 
     static string BuildCsproj(string packageId, string prefix, string displayName, int total, string? licenseSpdx, string? licenseUrl)

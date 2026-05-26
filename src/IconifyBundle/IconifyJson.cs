@@ -1,9 +1,5 @@
 namespace IconifyBundle;
 
-using System.Reflection;
-using System.Text.Encodings.Web;
-using System.Text.Json;
-
 /// <summary>
 /// Reads and writes the iconify-format JSON used by Iconify (the same format published as
 /// <c>@iconify-json/*</c> packages, and consumed by tools like Mermaid and Naiad). Supports three flows:
@@ -20,18 +16,14 @@ public static class IconifyJson
 {
     // Resource name applied to every pack assembly's embedded .icondata by packs/Directory.Build.props.
     // Uniform across all pack assemblies so a single lookup works for any pack.
-    const string IcondataResourceName = "IconifyBundle.icondata";
+    const string icondataResourceName = "IconifyBundle.icondata";
 
-    static readonly JsonWriterOptions defaultWriterOptions = new()
+    static JsonWriterOptions defaultWriterOptions = new()
     {
         // SVG bodies use literal '<', '>', '&', '"'; relaxed escaping keeps them readable and matches
         // how published @iconify-json/* packs look on disk.
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
-
-    // ------------------------------------------------------------------
-    // Write (arbitrary icons → iconify JSON)
-    // ------------------------------------------------------------------
 
     /// <summary>Serialises <paramref name="icons"/> under <paramref name="prefix"/> as iconify-format JSON.</summary>
     public static string Serialize(string prefix, IEnumerable<Icon> icons, IconifyJsonOptions? options = null)
@@ -84,13 +76,13 @@ public static class IconifyJson
         string prefix,
         IEnumerable<Icon> icons,
         IconifyJsonOptions? options = null,
-        CancellationToken cancellation = default)
+        Cancel cancel = default)
     {
         options ??= new();
         var iconList = ValidateAndMaterialise(prefix, icons);
         await using var writer = new Utf8JsonWriter(destination, WriterOptions(options));
         WriteRoot(writer, prefix, iconList, options);
-        await writer.FlushAsync(cancellation);
+        await writer.FlushAsync(cancel);
     }
 
     /// <summary>Writes the iconify-format JSON to a file (overwriting any existing file).</summary>
@@ -110,15 +102,11 @@ public static class IconifyJson
         string prefix,
         IEnumerable<Icon> icons,
         IconifyJsonOptions? options = null,
-        CancellationToken cancellation = default)
+        Cancel cancel = default)
     {
         await using var stream = File.Create(path);
-        await WriteToAsync(stream, prefix, icons, options, cancellation);
+        await WriteToAsync(stream, prefix, icons, options, cancel);
     }
-
-    // ------------------------------------------------------------------
-    // Write (IconPack → iconify JSON) — convenience over (prefix, icons)
-    // ------------------------------------------------------------------
 
     /// <summary>Serialises the materialised icons of <paramref name="pack"/> as iconify-format JSON.</summary>
     public static string Serialize(IconPack pack, IconifyJsonOptions? options = null) =>
@@ -137,8 +125,8 @@ public static class IconifyJson
         Stream destination,
         IconPack pack,
         IconifyJsonOptions? options = null,
-        CancellationToken cancellation = default) =>
-        WriteToAsync(destination, pack.Prefix, pack.Icons, options, cancellation);
+        Cancel cancel = default) =>
+        WriteToAsync(destination, pack.Prefix, pack.Icons, options, cancel);
 
     /// <summary>Writes the iconify-format JSON for <paramref name="pack"/> to a file (overwriting).</summary>
     public static void WriteToFile(string path, IconPack pack, IconifyJsonOptions? options = null) =>
@@ -149,12 +137,8 @@ public static class IconifyJson
         string path,
         IconPack pack,
         IconifyJsonOptions? options = null,
-        CancellationToken cancellation = default) =>
-        WriteToFileAsync(path, pack.Prefix, pack.Icons, options, cancellation);
-
-    // ------------------------------------------------------------------
-    // Read (iconify JSON → IconifyPack)
-    // ------------------------------------------------------------------
+        Cancel cancel = default) =>
+        WriteToFileAsync(path, pack.Prefix, pack.Icons, options, cancel);
 
     /// <summary>Parses iconify-format JSON from <paramref name="source"/>.</summary>
     public static IconifyPack Read(Stream source)
@@ -164,9 +148,9 @@ public static class IconifyJson
     }
 
     /// <summary>Async overload of <see cref="Read(Stream)"/>.</summary>
-    public static async Task<IconifyPack> ReadAsync(Stream source, CancellationToken cancellation = default)
+    public static async Task<IconifyPack> ReadAsync(Stream source, Cancel cancel = default)
     {
-        using var doc = await JsonDocument.ParseAsync(source, cancellationToken: cancellation);
+        using var doc = await JsonDocument.ParseAsync(source, cancellationToken: cancel);
         return Parse(doc.RootElement);
     }
 
@@ -206,7 +190,7 @@ public static class IconifyJson
     public static IconifyPack ReadPack(Type packClass)
     {
         var assembly = packClass.Assembly;
-        using var stream = assembly.GetManifestResourceStream(IcondataResourceName)
+        using var stream = assembly.GetManifestResourceStream(icondataResourceName)
                            ?? throw new InvalidOperationException(
                                $"Assembly '{assembly.GetName().Name}' does not embed iconify pack data. " +
                                $"Rebuild the pack against an IconifyBundle that ships packs/Directory.Build.props.");

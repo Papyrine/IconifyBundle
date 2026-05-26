@@ -4,10 +4,6 @@ public class IconifyJsonTests
     static readonly Icon database = new("database", """<ellipse cx="12" cy="5" rx="9" ry="3"/>""", 24, 24);
     static readonly Icon star = new("star", """<polygon points="12,2 15,9 22,9"/>""", 32, 32);
 
-    // ------------------------------------------------------------------
-    // Write
-    // ------------------------------------------------------------------
-
     [Test]
     public Task Serialize_hoists_common_size() =>
         Verify(IconifyJson.Serialize("sample", box, database), extension: "json");
@@ -80,10 +76,6 @@ public class IconifyJsonTests
         }
     }
 
-    // ------------------------------------------------------------------
-    // Read
-    // ------------------------------------------------------------------
-
     [Test]
     public async Task Parse_reads_iconify_json()
     {
@@ -133,10 +125,6 @@ public class IconifyJsonTests
         await Assert.That(() => IconifyJson.Parse("""{"icons":{}}"""))
             .Throws<FormatException>();
 
-    // ------------------------------------------------------------------
-    // Round-trip
-    // ------------------------------------------------------------------
-
     [Test]
     public async Task Round_trip_hoisted_pack()
     {
@@ -175,33 +163,34 @@ public class IconifyJsonTests
         await Assert.That(pack.Icons.Count).IsEqualTo(2);
     }
 
-    // ------------------------------------------------------------------
-    // Option B - upstream pack passthrough
-    // ------------------------------------------------------------------
-
     static Type LoadFeatherPackClass()
     {
         // Find IconifyBundle.Feather.dll relative to the build output of the Feather pack project. Loading
         // it via reflection avoids a ProjectReference and the version-clash it would cause (Feather pins
         // IconifyBundle 0.1.0 by package reference; we want the in-source build for everything else).
-        var current = AppContext.BaseDirectory;
-        var solutionDir = new DirectoryInfo(current);
+        // The test runner's configuration does not have to match Feather's - probe both, prefer whatever's
+        // freshest, so the test works whether Feather was built Release or Debug.
+        var solutionDir = new DirectoryInfo(AppContext.BaseDirectory);
         while (solutionDir is not null && !Directory.Exists(Path.Combine(solutionDir.FullName, "packs")))
         {
             solutionDir = solutionDir.Parent;
         }
 
-        var configuration = current.Contains("Release") ? "Release" : "Debug";
-        var dllPath = Path.Combine(
-            solutionDir!.FullName,
-            "packs",
-            "IconifyBundle.Feather",
-            "bin",
-            configuration,
-            "net8.0",
-            "IconifyBundle.Feather.dll");
+        var featherDir = Path.Combine(solutionDir!.FullName, "packs", "IconifyBundle.Feather", "bin");
+        var candidates = new[] { "Release", "Debug" }
+            .Select(configuration => Path.Combine(featherDir, configuration, "net8.0", "IconifyBundle.Feather.dll"))
+            .Where(File.Exists)
+            .OrderByDescending(File.GetLastWriteTimeUtc)
+            .ToList();
 
-        var assembly = System.Reflection.Assembly.LoadFrom(dllPath);
+        if (candidates.Count == 0)
+        {
+            throw new FileNotFoundException(
+                $"IconifyBundle.Feather.dll not found under {featherDir}. " +
+                "Build the pack first: 'dotnet build packs/IconifyBundle.Feather/IconifyBundle.Feather.csproj'.");
+        }
+
+        var assembly = System.Reflection.Assembly.LoadFrom(candidates[0]);
         return assembly.GetType("IconifyBundle.Feather", throwOnError: true)!;
     }
 
@@ -227,6 +216,7 @@ public class IconifyJsonTests
         var feather = LoadFeatherPackClass();
         await using var stream = IconifyJson.OpenPackStream(feather);
 
+        // ReSharper disable once MethodHasAsyncOverload
         var pack = IconifyJson.Read(stream);
         await Assert.That(pack.Prefix).IsEqualTo("feather");
         await Assert.That(pack.Icons.Count).IsEqualTo(286);
