@@ -205,6 +205,8 @@ https://github.com/iconify/icon-sets/blob/master/collections.md
 
 ## NuGet packages
 
+https://www.nuget.org/packages/IconifyBundle/
+
 One NuGet per Iconify pack. The list is generated when the packs are built.
 
 > **Note:** some Iconify packs are not published because their license is incompatible with redistribution in a public, commercially-consumable NuGet:<!-- include: packs. path: /src/packs.include.md -->
