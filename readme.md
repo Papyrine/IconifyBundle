@@ -1,5 +1,7 @@
 # IconifyBundle
 
+[![NuGet Status](https://img.shields.io/nuget/v/IconifyBundle.svg)](https://www.nuget.org/packages/IconifyBundle/)
+
 Strongly-typed [Iconify](https://iconify.design/) icons for .NET. Only the referenced icons are bundled - either baked into the consuming assembly (Resource mode) or written to the build output as `.svg` files (Disk mode). Blazor helpers included.
 
 
