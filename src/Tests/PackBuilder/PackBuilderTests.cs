@@ -27,7 +27,7 @@ public class PackBuilderTests
             prefixes,
             new ParallelOptions
             {
-                MaxDegreeOfParallelism = Environment.ProcessorCount
+                MaxDegreeOfParallelism = 4
             },
             async (prefix, token) =>
             {
@@ -47,7 +47,7 @@ public class PackBuilderTests
         Log.Line($"Packing solution ({projects.Count} projects)...");
         // echo: stream `dotnet pack` output live so the CI log shows steady progress through the long build.
         var result = await Dotnet.RunAsync(
-            $"pack \"{solutionPath}\" -c Release -o \"{RepoPaths.Packs}\" --nologo -maxcpucount:7", echo: true);
+            $"pack \"{solutionPath}\" -c Release -o \"{RepoPaths.Packs}\" --nologo -maxcpucount:4", echo: true);
         await Assert.That(result.ExitCode).IsEqualTo(0);
 
         // A successful `dotnet pack` already produced every nupkg; smoke-test the structure of just one
@@ -94,7 +94,7 @@ public class PackBuilderTests
         var project = await PackProjectWriter.Write("feather", json, RepoPaths.Packs);
 
         var result = await Dotnet.RunAsync(
-            $"pack \"{project.CsprojPath}\" -c Release -o \"{RepoPaths.Packs}\" --nologo -maxcpucount:7", echo: true);
+            $"pack \"{project.CsprojPath}\" -c Release -o \"{RepoPaths.Packs}\" --nologo -maxcpucount:4", echo: true);
         await Assert.That(result.ExitCode).IsEqualTo(0);
 
         var nupkg = Path.Combine(RepoPaths.Packs, $"{project.PackageId}.{RepoPaths.Version}.nupkg");
@@ -117,8 +117,12 @@ public class PackBuilderTests
             builder.Append('\n');
         }
 
-        builder.Append("| Package | Iconify | License | NuGet size | Assembly size |\n");
-        builder.Append("|---|---|---|--:|--:|\n");
+        builder.Append(
+            """
+            | Package | Iconify | License | NuGet size | Assembly size |
+            |---|---|---|--:|--:|
+
+            """);
 
         foreach (var project in projects.OrderBy(_ => _.PackageId, StringComparer.OrdinalIgnoreCase))
         {
@@ -126,15 +130,8 @@ public class PackBuilderTests
             var nupkgSize = new FileInfo(nupkg).Length;
             var assemblySize = await AssemblySize(nupkg, project.PackageId);
 
-            builder
-                .Append("| [").Append(project.PackageId)
-                .Append("](https://www.nuget.org/packages/").Append(project.PackageId)
-                .Append(") | [").Append(project.Prefix)
-                .Append("](https://icon-sets.iconify.design/").Append(project.Prefix)
-                .Append("/) | ").Append(License(project))
-                .Append(" | ").Append(FormatSize(nupkgSize))
-                .Append(" | ").Append(FormatSize(assemblySize))
-                .Append(" |\n");
+            builder.Append(
+                $"| [{project.PackageId}](https://www.nuget.org/packages/{project.PackageId}) | [{project.Prefix}](https://icon-sets.iconify.design/{project.Prefix}/) | {License(project)} | {FormatSize(nupkgSize)} | {FormatSize(assemblySize)} |\n");
         }
 
         var path = Path.Combine(RepoPaths.Root, "src", "packs.include.md");
@@ -166,7 +163,7 @@ public class PackBuilderTests
         var links = string.Join(
             ", ",
             packs.Select(_ => $"[{_.Prefix}](https://icon-sets.iconify.design/{_.Prefix}/)"));
-        builder.Append("> - **").Append(label).Append("**: ").Append(links).Append('\n');
+        builder.Append($"> - **{label}**: {links}\n");
     }
 
     static string License(PackProjectWriter.PackProject project)
@@ -208,7 +205,7 @@ public class PackBuilderTests
         foreach (var project in projects.OrderByDescending(_ => _.IconCount))
         {
             var relative = Path.GetRelativePath(RepoPaths.Packs, project.CsprojPath).Replace('\\', '/');
-            builder.Append("  <Project Path=\"").Append(relative).Append("\" />\n");
+            builder.Append($"  <Project Path=\"{relative}\" />\n");
         }
 
         builder.Append("</Solution>\n");
@@ -241,14 +238,49 @@ public class PackBuilderTests
         // are self-contained and do not inherit the strict src/ build settings - but also embed each
         // pack's *.icondata into its compiled assembly as a uniform manifest resource so the runtime
         // (IconifyJson.OpenPackStream / ReadPack) can serve the full upstream pack data.
+        var srcRoot = RepoPaths.Root.Replace('\\', '/') + "/src";
+        var buildTaskDll = $"{srcRoot}/IconifyBundle.Build/bin/$(Configuration)/netstandard2.0/IconifyBundle.Build.dll";
+        var packageIcon = $"{srcRoot}/icon.png";
         File.WriteAllText(
             Path.Combine(RepoPaths.Packs, "Directory.Build.props"),
-            """
+            $"""
             <Project>
+              <PropertyGroup>
+                <TargetFramework>net8.0</TargetFramework>
+                <LangVersion>latest</LangVersion>
+                <Nullable>enable</Nullable>
+                <ImplicitUsings>enable</ImplicitUsings>
+                <IsPackable>true</IsPackable>
+                <IncludeBuildOutput>true</IncludeBuildOutput>
+                <Version>{RepoPaths.Version}</Version>
+                <Authors>$(RepositoryUrlEx)/graphs/contributors</Authors>
+                <PackageReadmeFile>readme.md</PackageReadmeFile>
+                <PackageIcon>icon.png</PackageIcon>
+                <PackageProjectUrl>https://github.com/Papyrine/IconifyBundle</PackageProjectUrl>
+                <GenerateDocumentationFile>false</GenerateDocumentationFile>
+                <!-- CS0108: an icon named e.g. "equals"/"gethashcode" yields a member that hides an object member.
+                     NU5100: the build task ships in tasks/ (not lib/) on purpose - it is an MSBuild task, not a reference.
+                     NU5125: CC-BY packs declare their license via the deprecated <PackageLicenseUrl> because NuGet
+                             rejects those licenses in <PackageLicenseExpression> (see BuildCsproj). -->
+                <NoWarn>$(NoWarn);NU5100;NU5125;NU5128;CS0108</NoWarn>
+              </PropertyGroup>
               <ItemGroup>
                 <EmbeddedResource Include="*.icondata">
                   <LogicalName>IconifyBundle.icondata</LogicalName>
                 </EmbeddedResource>
+              </ItemGroup>
+              <ItemGroup>
+                <!-- The compiled pack class returns IconifyBundle.Icon and uses IconifyBundle.IconPack.
+                     IconifyBundle also injects the source generator into the consumer (via its
+                     build/buildTransitive props), so a single reference to this pack runs it - the pack
+                     itself ships no generator. -->
+                <PackageReference Include="IconifyBundle" Version="{RepoPaths.Version}" />
+              </ItemGroup>
+              <ItemGroup>
+                <None Include="readme.md" Pack="true" PackagePath="\" />
+                <None Include="{packageIcon}" Pack="true" PackagePath="\" Visible="false" />
+                <!-- Ship the Disk-mode build task (reconstructs used .svg files from the .icondata). -->
+                <None Include="{buildTaskDll}" Pack="true" PackagePath="tasks" Visible="false" />
               </ItemGroup>
             </Project>
 
