@@ -1,11 +1,5 @@
 static class PackSelection
 {
-    public enum ExclusionReason
-    {
-        NonCommercial,
-        Copyleft
-    }
-
     public sealed record ExcludedPack(string Prefix, ExclusionReason Reason);
 
     public sealed record Result(List<string> Prefixes, List<ExcludedPack> Excluded);

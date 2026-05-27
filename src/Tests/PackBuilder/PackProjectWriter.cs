@@ -63,7 +63,8 @@ static class PackProjectWriter
         var licenseTitle = "";
         string? licenseUrl = null;
         string? licenseSpdx = null;
-        if (hasInfo && info.TryGetProperty("license", out var license))
+        if (hasInfo &&
+            info.TryGetProperty("license", out var license))
         {
             licenseTitle = ShortLicenseTitle(license.TryGetProperty("title", out var lt) ? lt.GetString() ?? "" : "");
             licenseUrl = license.TryGetProperty("url", out var lu) ? lu.GetString() : null;
@@ -109,12 +110,13 @@ static class PackProjectWriter
     // After compilation, reconstruct just those icons' .svg files from the pack's single .icondata (via the
     // shipped WriteUsedIcons task) into the output (under iconifybundle/<prefix>/), then mirror them into the
     // publish output. Item/target names are pack-scoped so multiple referenced packs don't collide.
+    // The <UsingTask> for WriteUsedIcons is registered once in IconifyBundle/build/IconifyBundle.targets
+    // (transitively imported here via the IconifyBundle PackageReference), so the task dll ships once - in
+    // the IconifyBundle package's tasks/ folder - rather than being duplicated into every pack.
     static string BuildTargets(string prefix, string pascal) =>
         $"""
           <?xml version="1.0" encoding="utf-8"?>
           <Project>
-            <UsingTask TaskName="IconifyBundle.Build.WriteUsedIcons"
-                       AssemblyFile="$(MSBuildThisFileDirectory)../tasks/IconifyBundle.Build.dll" />
             <!-- Imported after the project body, so $(IconifyBundleMode) has its final value. In Disk mode
                  write the generator's output (incl. the used-icon list) to disk for the target below. -->
             <PropertyGroup Condition="'$(IconifyBundleMode)' == 'Disk'">

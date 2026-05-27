@@ -112,8 +112,8 @@ public class PackBuilderTests
         if (excluded.Count > 0)
         {
             builder.Append("> **Note:** some Iconify packs are not published because their license is incompatible with redistribution in a public, commercially-consumable NuGet:\n");
-            AppendExcluded(builder, excluded, PackSelection.ExclusionReason.NonCommercial, "Non-commercial (CC BY-NC*)");
-            AppendExcluded(builder, excluded, PackSelection.ExclusionReason.Copyleft, "Copyleft (GPL)");
+            AppendExcluded(builder, excluded, ExclusionReason.NonCommercial, "Non-commercial (CC BY-NC*)");
+            AppendExcluded(builder, excluded, ExclusionReason.Copyleft, "Copyleft (GPL)");
             builder.Append('\n');
         }
 
@@ -151,7 +151,7 @@ public class PackBuilderTests
     static void AppendExcluded(
         StringBuilder builder,
         List<PackSelection.ExcludedPack> excluded,
-        PackSelection.ExclusionReason reason,
+        ExclusionReason reason,
         string label)
     {
         var packs = excluded.Where(_ => _.Reason == reason).ToList();
@@ -223,9 +223,10 @@ public class PackBuilderTests
         await Assert.That(entries).Contains($"build/{project.PackageId}.props");
         await Assert.That(entries).Contains($"build/{project.PackageId}.targets");
         await Assert.That(entries).Contains($"lib/net8.0/{project.PackageId}.dll");
-        await Assert.That(entries).Contains("tasks/IconifyBundle.Build.dll");
-        // The generator is shipped once by the IconifyBundle runtime package, not per pack.
+        // Both the generator and the Disk-mode build task are shipped once by the IconifyBundle runtime
+        // package, not per pack - so they must NOT appear inside an individual pack's nupkg.
         await Assert.That(entries.Any(_ => _.Contains("IconifyBundle.Generator.dll"))).IsFalse();
+        await Assert.That(entries.Any(_ => _.Contains("IconifyBundle.Build.dll"))).IsFalse();
         // Icon data ships outside the assembly; it must NOT be embedded as a resource any more.
         await Assert.That(entries.Any(_ => _.EndsWith("iconifybundle.pack.json"))).IsFalse();
         // The icons are reconstructed at build from the single .icondata; no per-icon .svg is shipped.
@@ -239,7 +240,6 @@ public class PackBuilderTests
         // pack's *.icondata into its compiled assembly as a uniform manifest resource so the runtime
         // (IconifyJson.OpenPackStream / ReadPack) can serve the full upstream pack data.
         var srcRoot = RepoPaths.Root.Replace('\\', '/') + "/src";
-        var buildTaskDll = $"{srcRoot}/IconifyBundle.Build/bin/$(Configuration)/netstandard2.0/IconifyBundle.Build.dll";
         var packageIcon = $"{srcRoot}/icon.png";
         File.WriteAllText(
             Path.Combine(RepoPaths.Packs, "Directory.Build.props"),
@@ -279,8 +279,6 @@ public class PackBuilderTests
               <ItemGroup>
                 <None Include="readme.md" Pack="true" PackagePath="\" />
                 <None Include="{packageIcon}" Pack="true" PackagePath="\" Visible="false" />
-                <!-- Ship the Disk-mode build task (reconstructs used .svg files from the .icondata). -->
-                <None Include="{buildTaskDll}" Pack="true" PackagePath="tasks" Visible="false" />
               </ItemGroup>
             </Project>
 

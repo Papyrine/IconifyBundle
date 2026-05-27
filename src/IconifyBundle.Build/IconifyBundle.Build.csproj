@@ -3,8 +3,10 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>false</IsPackable>
-    <!-- An MSBuild task assembly shipped per IconifyBundle.<Pack> package. In Disk mode it reconstructs the
-         referenced icons' .svg files from the pack's single .icondata, so the nuget ships icon bodies once. -->
+    <!-- An MSBuild task assembly shipped once - inside the IconifyBundle package's tasks/ folder, registered
+         via its build/buildTransitive .targets - and reused by every pack via IconifyBundle's transitive
+         reference. In Disk mode it reconstructs the referenced icons' .svg files from the pack's single
+         .icondata, so each nuget ships icon bodies once. -->
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <!-- Microsoft.Build.* is referenced compile-only (ExcludeAssets=Runtime); the MSBuild host provides the
          actual (patched) runtime, so its package audit advisory does not apply to what we ship or run. -->
