@@ -8,9 +8,9 @@ public class PackBuilderTests
     [Explicit]
     public async Task BuildPacks()
     {
-        Directory.CreateDirectory(RepoPaths.Nugets);
+        PurgeDirectory(RepoPaths.Packs, "IconifyBundle.*");
+        PurgeDirectory(RepoPaths.Packs, "*.nupkg");
         Directory.CreateDirectory(RepoPaths.Cache);
-        Directory.CreateDirectory(RepoPaths.Packs);
         WritePacksScaffolding();
 
         await using var cache = new HttpCache(RepoPaths.Cache);
@@ -47,13 +47,13 @@ public class PackBuilderTests
         Log.Line($"Packing solution ({projects.Count} projects)...");
         // echo: stream `dotnet pack` output live so the CI log shows steady progress through the long build.
         var result = await Dotnet.RunAsync(
-            $"pack \"{solutionPath}\" -c Release -o \"{RepoPaths.Nugets}\" --nologo", echo: true);
+            $"pack \"{solutionPath}\" -c Release -o \"{RepoPaths.Packs}\" --nologo -maxcpucount:7", echo: true);
         await Assert.That(result.ExitCode).IsEqualTo(0);
 
         // A successful `dotnet pack` already produced every nupkg; smoke-test the structure of just one
         // (opening all 200+ archives to assert contents is slow and redundant).
         var sample = projects[0];
-        var nupkg = Path.Combine(RepoPaths.Nugets, $"{sample.PackageId}.{RepoPaths.Version}.nupkg");
+        var nupkg = Path.Combine(RepoPaths.Packs, $"{sample.PackageId}.{RepoPaths.Version}.nupkg");
         Log.Line($"Verifying package contents of {sample.PackageId}...");
         await Assert.That(File.Exists(nupkg)).IsTrue();
         await AssertPackageContents(nupkg, sample);
@@ -63,6 +63,20 @@ public class PackBuilderTests
         Log.Line($"Done: {projects.Count} packs.");
     }
 
+    static void PurgeDirectory(string path, string match)
+    {
+        Directory.CreateDirectory(path);
+        foreach (var item in Directory.EnumerateDirectories(path, match))
+        {
+            Directory.Delete(item, true);
+        }
+
+        foreach (var item in Directory.EnumerateFiles(path, match))
+        {
+            File.Delete(item);
+        }
+    }
+
     // Explicit: builds a single pack (feather) for fast end-to-end validation of the consumer flow.
     //   Tests.exe --treenode-filter "/*/*/PackBuilderTests/BuildFeatherPack"
     [Test]
@@ -70,7 +84,6 @@ public class PackBuilderTests
     [Explicit]
     public async Task BuildFeatherPack()
     {
-        Directory.CreateDirectory(RepoPaths.Nugets);
         Directory.CreateDirectory(RepoPaths.Cache);
         Directory.CreateDirectory(RepoPaths.Packs);
         WritePacksScaffolding();
@@ -81,10 +94,10 @@ public class PackBuilderTests
         var project = await PackProjectWriter.Write("feather", json, RepoPaths.Packs);
 
         var result = await Dotnet.RunAsync(
-            $"pack \"{project.CsprojPath}\" -c Release -o \"{RepoPaths.Nugets}\" --nologo", echo: true);
+            $"pack \"{project.CsprojPath}\" -c Release -o \"{RepoPaths.Packs}\" --nologo -maxcpucount:7", echo: true);
         await Assert.That(result.ExitCode).IsEqualTo(0);
 
-        var nupkg = Path.Combine(RepoPaths.Nugets, $"{project.PackageId}.{RepoPaths.Version}.nupkg");
+        var nupkg = Path.Combine(RepoPaths.Packs, $"{project.PackageId}.{RepoPaths.Version}.nupkg");
         await AssertPackageContents(nupkg, project);
         Log.Line($"Built {project.PackageId}.");
     }
@@ -109,7 +122,7 @@ public class PackBuilderTests
 
         foreach (var project in projects.OrderBy(_ => _.PackageId, StringComparer.OrdinalIgnoreCase))
         {
-            var nupkg = Path.Combine(RepoPaths.Nugets, $"{project.PackageId}.{RepoPaths.Version}.nupkg");
+            var nupkg = Path.Combine(RepoPaths.Packs, $"{project.PackageId}.{RepoPaths.Version}.nupkg");
             var nupkgSize = new FileInfo(nupkg).Length;
             var assemblySize = await AssemblySize(nupkg, project.PackageId);
 

@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ProjectFiles" />
     <PackageReference Include="Replicant" />
     <PackageReference Include="TUnit" />
     <PackageReference Include="Verify.TUnit" />

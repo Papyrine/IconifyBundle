@@ -38,4 +38,5 @@ on_failure:
 test: off
 artifacts:
 - path: nugets/*.nupkg
+- path: packs/*.nupkg
 - path: TestResults/*.cobertura.xml

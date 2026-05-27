@@ -213,6 +213,7 @@ static class PackProjectWriter
         // (The generator is shipped by the IconifyBundle runtime package, not per pack.)
         var srcRoot = RepoPaths.Root.Replace('\\', '/') + "/src";
         var buildTaskDll = $"{srcRoot}/IconifyBundle.Build/bin/$(Configuration)/netstandard2.0/IconifyBundle.Build.dll";
+        var packageIcon = $"{srcRoot}/icon.png";
 
         return $"""
                 <Project Sdk="Microsoft.NET.Sdk">
@@ -231,6 +232,7 @@ static class PackProjectWriter
                     <PackageTags>iconify;icons;svg;{prefix}</PackageTags>
                     <Authors>$(RepositoryUrlEx)/graphs/contributors</Authors>{licenseElement}
                     <PackageReadmeFile>readme.md</PackageReadmeFile>
+                    <PackageIcon>icon.png</PackageIcon>
                     <GenerateDocumentationFile>false</GenerateDocumentationFile>
                     <!-- CS0108: an icon named e.g. "equals"/"gethashcode" yields a member that hides an object member.
                          NU5100: the build task ships in tasks/ (not lib/) on purpose - it is an MSBuild task, not a reference.
@@ -247,6 +249,7 @@ static class PackProjectWriter
                   </ItemGroup>
                   <ItemGroup>
                     <None Include="readme.md" Pack="true" PackagePath="\" />
+                    <None Include="{packageIcon}" Pack="true" PackagePath="\" Visible="false" />
                     <!-- Icon data (bodies + sizes), the single source of icons. Read by the generator at
                          build; in Disk mode the build task reconstructs the used .svg files from it. NOT
                          embedded in the assembly, and shipped once (no separate icons/*.svg). -->
