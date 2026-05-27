@@ -10,8 +10,9 @@ build_script:
     sudo ./dotnet-install.sh --jsonfile global.json --architecture x64 --install-dir '/usr/share/dotnet'
 # 1. Build core: produces IconifyBundle + IconifyBundle.Blazor nupkgs in nugets/
 - dotnet build src --configuration Release
-# 2. Download icon packs (Replicant cached) and pack IconifyBundle.<Pack> nugets into nugets/
-#    (the explicit PackBuilderTests.BuildPacks test, run on its own via a filter)
+# 2. Download icon packs (Replicant cached) and pack IconifyBundle.<Pack> nugets into packs/
+#    (the explicit PackBuilderTests.BuildPacks test, run on its own via a filter). IntegrationTests
+#    and sample include packs/ as a local NuGet feed (see their nuget.config) so they can resolve them.
 - src/Tests/bin/Release/net10.0/Tests --no-ansi --no-progress --treenode-filter "/*/*/PackBuilderTests/*" --report-trx --report-trx-filename packbuilder.trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output packbuilder.cobertura.xml
 # 3. Build the integration tests + sample (consume the freshly-built nugets from the local feed)
 - dotnet build IntegrationTests --configuration Release
