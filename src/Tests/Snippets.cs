@@ -29,12 +29,22 @@ static class Snippets
         // Parse iconify-format JSON back into an IconifyPack (prefix + icons + optional info).
         const string source =
             """
-            {"prefix":"sample","width":24,"height":24,"icons":{"box":{"body":"<rect/>"}}}
+            {
+              "prefix": "sample",
+              "width": 24,
+              "height": 24,
+              "icons": {
+                "box": {
+                  "body": "<rect/>"
+                }
+              }
+            }
             """;
         var pack = IconifyJson.Parse(source);
-
-        Console.WriteLine(pack.Prefix);                 // "sample"
-        Console.WriteLine(pack.Icons.Count);            // 1
+        // "sample"
+        Console.WriteLine(pack.Prefix);
+        // 1
+        Console.WriteLine(pack.Icons.Count);
         foreach (var icon in pack.Icons)
         {
             Console.WriteLine($"{icon.Name}: {icon.Body} ({icon.Width}x{icon.Height})");

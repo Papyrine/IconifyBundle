@@ -35,4 +35,17 @@
           Visible="false" />
   </ItemGroup>
 
+  <!-- Build the Disk-mode task and ship it in this package's tasks/ folder. The <UsingTask> registration in
+       build/buildTransitive IconifyBundle.targets points consumers at this single copy, so packs do not each
+       ship their own duplicate of the (identical) task dll. -->
+  <ItemGroup>
+    <ProjectReference Include="..\IconifyBundle.Build\IconifyBundle.Build.csproj"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
+    <None Include="..\IconifyBundle.Build\bin\$(Configuration)\netstandard2.0\IconifyBundle.Build.dll"
+          Pack="true"
+          PackagePath="tasks"
+          Visible="false" />
+  </ItemGroup>
+
 </Project>

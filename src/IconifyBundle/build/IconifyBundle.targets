@@ -13,4 +13,11 @@
     </ItemGroup>
   </Target>
 
+  <!-- Register the Disk-mode build task once, here, from the IconifyBundle package's tasks/ folder. Every
+       pack pulls IconifyBundle in as a transitive dependency, so its build/buildTransitive .targets are
+       imported into the consumer before the per-pack .targets run their <WriteUsedIcons /> invocation -
+       meaning packs do not need to ship their own copy of IconifyBundle.Build.dll. -->
+  <UsingTask TaskName="IconifyBundle.Build.WriteUsedIcons"
+             AssemblyFile="$(MSBuildThisFileDirectory)..\tasks\IconifyBundle.Build.dll" />
+
 </Project>

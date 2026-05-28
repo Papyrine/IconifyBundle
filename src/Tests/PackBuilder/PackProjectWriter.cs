@@ -35,9 +35,7 @@ static class PackProjectWriter
         // AdditionalFile (not embedded in the assembly) for the generator to read at build time, so it can
         // materialise only the icons a consumer uses.
         var names = new List<string>();
-        var data = new StringBuilder()
-            .Append("prefix=").Append(prefix).Append('\n')
-            .Append("class=").Append(pascal).Append("\n\n");
+        var data = new StringBuilder($"prefix={prefix}\nclass={pascal}\n\n");
 
         foreach (var entry in iconsElement.EnumerateObject())
         {
@@ -65,7 +63,8 @@ static class PackProjectWriter
         var licenseTitle = "";
         string? licenseUrl = null;
         string? licenseSpdx = null;
-        if (hasInfo && info.TryGetProperty("license", out var license))
+        if (hasInfo &&
+            info.TryGetProperty("license", out var license))
         {
             licenseTitle = ShortLicenseTitle(license.TryGetProperty("title", out var lt) ? lt.GetString() ?? "" : "");
             licenseUrl = license.TryGetProperty("url", out var lu) ? lu.GetString() : null;
@@ -111,12 +110,13 @@ static class PackProjectWriter
     // After compilation, reconstruct just those icons' .svg files from the pack's single .icondata (via the
     // shipped WriteUsedIcons task) into the output (under iconifybundle/<prefix>/), then mirror them into the
     // publish output. Item/target names are pack-scoped so multiple referenced packs don't collide.
+    // The <UsingTask> for WriteUsedIcons is registered once in IconifyBundle/build/IconifyBundle.targets
+    // (transitively imported here via the IconifyBundle PackageReference), so the task dll ships once - in
+    // the IconifyBundle package's tasks/ folder - rather than being duplicated into every pack.
     static string BuildTargets(string prefix, string pascal) =>
         $"""
           <?xml version="1.0" encoding="utf-8"?>
           <Project>
-            <UsingTask TaskName="IconifyBundle.Build.WriteUsedIcons"
-                       AssemblyFile="$(MSBuildThisFileDirectory)../tasks/IconifyBundle.Build.dll" />
             <!-- Imported after the project body, so $(IconifyBundleMode) has its final value. In Disk mode
                  write the generator's output (incl. the used-icon list) to disk for the target below. -->
             <PropertyGroup Condition="'$(IconifyBundleMode)' == 'Disk'">
@@ -209,52 +209,24 @@ static class PackProjectWriter
             licenseElement = "";
         }
 
-        // Absolute path to the built build-task dll; $(Configuration) resolves to the pack build's config.
-        // (The generator is shipped by the IconifyBundle runtime package, not per pack.)
-        var srcRoot = RepoPaths.Root.Replace('\\', '/') + "/src";
-        var buildTaskDll = $"{srcRoot}/IconifyBundle.Build/bin/$(Configuration)/netstandard2.0/IconifyBundle.Build.dll";
-
+        // Constants shared across every generated pack (TargetFramework, Version, PackageReadmeFile,
+        // PackageIcon, the IconifyBundle PackageReference, readme.md / icon.png / build-task-dll <None>
+        // entries, etc.) live in packs/Directory.Build.props - see PackBuilderTests.WritePacksScaffolding.
         return $"""
                 <Project Sdk="Microsoft.NET.Sdk">
                   <PropertyGroup>
-                    <TargetFramework>net8.0</TargetFramework>
-                    <LangVersion>latest</LangVersion>
-                    <Nullable>enable</Nullable>
-                    <ImplicitUsings>enable</ImplicitUsings>
-                    <IsPackable>true</IsPackable>
-                    <IncludeBuildOutput>true</IncludeBuildOutput>
                     <PackageId>{packageId}</PackageId>
                     <AssemblyName>{packageId}</AssemblyName>
-                    <Version>{RepoPaths.Version}</Version>
                     <Description>{Escape(description)}</Description>
-                    <PackageProjectUrl>https://iconify.design/</PackageProjectUrl>
-                    <PackageTags>iconify;icons;svg;{prefix}</PackageTags>
-                    <Authors>$(RepositoryUrlEx)/graphs/contributors</Authors>{licenseElement}
-                    <PackageReadmeFile>readme.md</PackageReadmeFile>
-                    <GenerateDocumentationFile>false</GenerateDocumentationFile>
-                    <!-- CS0108: an icon named e.g. "equals"/"gethashcode" yields a member that hides an object member.
-                         NU5100: the build task ships in tasks/ (not lib/) on purpose - it is an MSBuild task, not a reference.
-                         NU5125: CC-BY packs declare their license via the deprecated <PackageLicenseUrl> because NuGet
-                                 rejects those licenses in <PackageLicenseExpression> (see BuildCsproj). -->
-                    <NoWarn>$(NoWarn);NU5100;NU5125;NU5128;CS0108</NoWarn>
+                    <PackageTags>iconify;icons;svg;{prefix}</PackageTags>{licenseElement}
                   </PropertyGroup>
                   <ItemGroup>
-                    <!-- The compiled pack class returns IconifyBundle.Icon and uses IconifyBundle.IconPack.
-                         IconifyBundle also injects the source generator into the consumer (via its
-                         build/buildTransitive props), so a single reference to this pack runs it - the pack
-                         itself ships no generator. -->
-                    <PackageReference Include="IconifyBundle" Version="{RepoPaths.Version}" />
-                  </ItemGroup>
-                  <ItemGroup>
-                    <None Include="readme.md" Pack="true" PackagePath="\" />
                     <!-- Icon data (bodies + sizes), the single source of icons. Read by the generator at
                          build; in Disk mode the build task reconstructs the used .svg files from it. NOT
                          embedded in the assembly, and shipped once (no separate icons/*.svg). -->
                     <None Include="{prefix}.icondata" Pack="true" PackagePath="build" />
                     <None Include="build/{packageId}.props" Pack="true" PackagePath="build" />
                     <None Include="build/{packageId}.targets" Pack="true" PackagePath="build" />
-                    <!-- Ship the Disk-mode build task (reconstructs used .svg files from the .icondata). -->
-                    <None Include="{buildTaskDll}" Pack="true" PackagePath="tasks" Visible="false" />
                   </ItemGroup>
                 </Project>
 

@@ -2,23 +2,17 @@ using System.Xml.Linq;
 
 static class RepoPaths
 {
-    public static string Root { get; } = Find();
-
-    public static string Nugets { get; } = Path.Combine(Root, "nugets");
-
-    public static string Packs { get; } = Path.Combine(Root, "packs");
-
-    public static string Cache { get; } = Path.Combine(Root, ".cache");
-
-    /// <summary>
-    /// The version stamped on generated pack packages, read from the shared root <c>Version.props</c>
-    /// so packs stay aligned with the core IconifyBundle packages and the downstream consumers.
-    /// </summary>
-    public static string Version { get; } = ReadVersion();
-
-    static string ReadVersion()
+    static RepoPaths()
     {
+        Root = Path.GetFullPath(Path.Combine(ProjectFiles.SolutionDirectory, "../"));
+        Packs = Path.Combine(Root, "packs");
+        Cache = Path.Combine(Root, ".cache");
         var propsPath = Path.Combine(Root, "Version.props");
+        Version = ReadVersion(propsPath);
+    }
+
+    private static string ReadVersion(string propsPath)
+    {
         var version = XDocument.Load(propsPath)
             .Descendants("IconifyBundleVersion")
             .FirstOrDefault()
@@ -33,19 +27,15 @@ static class RepoPaths
         return version;
     }
 
-    static string Find()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null)
-        {
-            if (File.Exists(Path.Combine(dir.FullName, "global.json")))
-            {
-                return dir.FullName;
-            }
+    public static string Root { get; }
 
-            dir = dir.Parent;
-        }
+    public static string Packs { get; }
 
-        throw new DirectoryNotFoundException("Could not locate the repo root (no global.json found above the test output).");
-    }
+    public static string Cache { get; }
+
+    /// <summary>
+    /// The version stamped on generated pack packages, read from the shared root <c>Version.props</c>
+    /// so packs stay aligned with the core IconifyBundle packages and the downstream consumers.
+    /// </summary>
+    public static string Version { get; }
 }

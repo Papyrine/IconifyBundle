@@ -96,8 +96,18 @@ public class IconifyJsonTests
     [Test]
     public async Task Parse_reads_iconify_json()
     {
-        const string json = """
-            {"prefix":"sample","width":24,"height":24,"icons":{"box":{"body":"<rect/>"}}}
+        const string json =
+            """
+            {
+              "prefix": "sample",
+              "width": 24,
+              "height": 24,
+              "icons": {
+                "box": {
+                  "body": "<rect/>"
+                }
+              }
+            }
             """;
         var pack = IconifyJson.Parse(json);
 

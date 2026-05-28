@@ -9,7 +9,7 @@
     Bump the version here and everything stays aligned.
   -->
   <PropertyGroup>
-    <IconifyBundleVersion>0.3.0</IconifyBundleVersion>
+    <IconifyBundleVersion>0.3.1</IconifyBundleVersion>
   </PropertyGroup>
 
 </Project>
