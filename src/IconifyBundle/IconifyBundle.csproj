@@ -18,6 +18,7 @@
     <None Include="build\IconifyBundle.targets" Pack="true" PackagePath="buildTransitive\IconifyBundle.targets" />
     <None Include="..\..\readme.md" Pack="true" PackagePath="\" Visible="false" />
     <PackageReference Include="ProjectDefaults" PrivateAssets="all" />
+    <PackageReference Include="SponsorCheck" PrivateAssets="all" />
   </ItemGroup>
 
   <!-- Build the generator (so its dll exists) and dogfood it on this compile. It is shipped in this package

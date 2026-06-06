@@ -6,6 +6,12 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <PackageTags>iconify;icons;svg;source-generator;blazor</PackageTags>
     <NoWarn>$(NoWarn);CS1591;NU1608;NU1109;IDE0005</NoWarn>
+    <PackageLicenseFile>OSMFEULA.txt</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\OSMFEULA.txt" Pack="true" PackagePath="" Visible="false" />
+  </ItemGroup>
 
 </Project>
