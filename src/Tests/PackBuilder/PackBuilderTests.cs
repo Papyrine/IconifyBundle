@@ -269,6 +269,11 @@ public class PackBuilderTests
                   <LogicalName>IconifyBundle.icondata</LogicalName>
                 </EmbeddedResource>
               </ItemGroup>
+              <PropertyGroup>
+                <!-- Pack projects are authored by Papyrine — suppress the sponsor verification that fires
+                     because IconifyBundle ships its verifier under buildTransitive/. -->
+                <Papyrine_SponsorshipLicenseIgnored>true</Papyrine_SponsorshipLicenseIgnored>
+              </PropertyGroup>
               <ItemGroup>
                 <!-- The compiled pack class returns IconifyBundle.Icon and uses IconifyBundle.IconPack.
                      IconifyBundle also injects the source generator into the consumer (via its
