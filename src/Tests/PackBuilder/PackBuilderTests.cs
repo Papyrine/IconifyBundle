@@ -262,14 +262,7 @@ public class PackBuilderTests
                      NU5100: the build task ships in tasks/ (not lib/) on purpose - it is an MSBuild task, not a reference.
                      NU5125: CC-BY packs declare their license via the deprecated <PackageLicenseUrl> because NuGet
                              rejects those licenses in <PackageLicenseExpression> (see BuildCsproj). -->
-                <NoWarn>$(NoWarn);NU5100;NU5125;NU5128;CS0108</NoWarn>
-              </PropertyGroup>
-              <ItemGroup>
-                <EmbeddedResource Include="*.icondata">
-                  <LogicalName>IconifyBundle.icondata</LogicalName>
-                </EmbeddedResource>
-              </ItemGroup>
-              <PropertyGroup>
+                <NoWarn>$(NoWarn);NU5100;NU5125;NU5128;CS0108;SC023</NoWarn>
                 <!-- Pack projects are authored by Papyrine — suppress the sponsor verification that fires
                      because IconifyBundle ships its verifier under buildTransitive/. -->
                 <Papyrine_SponsorshipLicenseIgnored>true</Papyrine_SponsorshipLicenseIgnored>
@@ -280,8 +273,9 @@ public class PackBuilderTests
                      build/buildTransitive props), so a single reference to this pack runs it - the pack
                      itself ships no generator. -->
                 <PackageReference Include="IconifyBundle" Version="{RepoPaths.Version}" />
-              </ItemGroup>
-              <ItemGroup>
+                <EmbeddedResource Include="*.icondata">
+                  <LogicalName>IconifyBundle.icondata</LogicalName>
+                </EmbeddedResource>
                 <None Include="readme.md" Pack="true" PackagePath="\" />
                 <None Include="{packageIcon}" Pack="true" PackagePath="\" Visible="false" />
               </ItemGroup>
