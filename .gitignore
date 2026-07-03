@@ -29,3 +29,4 @@ packs/
 .DS_Store
 Thumbs.db
 .claude/settings.local.json
+/TestResults
