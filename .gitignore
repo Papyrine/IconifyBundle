@@ -30,3 +30,4 @@ packs/
 Thumbs.db
 .claude/settings.local.json
 /TestResults
+*.lnk
