@@ -1,15 +1,17 @@
-name: build
+name: release
 
 on:
   push:
-    # Branches only: tag pushes are built, tested and published by release.yml.
-    branches: ['**']
-  pull_request:
-  workflow_dispatch:
+    tags: ['*']
 
 jobs:
-  build:
+  publish:
+    # Same runner as build.yml.
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Lets the job mint the OIDC token nuget.org trades for a short-lived publishing key.
+      id-token: write
     env:
       DOTNET_NOLOGO: true
       DOTNET_CLI_TELEMETRY_OPTOUT: true
@@ -26,9 +28,27 @@ jobs:
         with:
           global-json-file: global.json
 
+      # The tag is the version: tag 1.2.3 (or v1.2.3) publishes 1.2.3. Version.props is the single
+      # source of truth for IconifyBundleVersion (src/Directory.Build.props, the IntegrationTests and
+      # sample package pins, and the PackBuilder test which reads the file at runtime to version the
+      # icon pack nugets), so the tag version is written into it rather than only passed as
+      # -p:Version, which would leave the packs and the consumer pins on the old version.
+      - name: Resolve the version from the tag
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME -replace '^v', ''
+          "version=$version" >> $env:GITHUB_ENV
+          $path = 'Version.props'
+          $content = Get-Content $path -Raw
+          $updated = $content -replace '<IconifyBundleVersion>[^<]*</IconifyBundleVersion>', "<IconifyBundleVersion>$version</IconifyBundleVersion>"
+          if ($updated -eq $content -and $content -notmatch "<IconifyBundleVersion>$([regex]::Escape($version))</IconifyBundleVersion>") {
+            throw "Failed to set IconifyBundleVersion in $path"
+          }
+          Set-Content $path $updated -NoNewline
+
       # 1. Build core: produces IconifyBundle + IconifyBundle.Blazor nupkgs in nugets/
       - name: Build
-        run: dotnet build src --configuration Release
+        run: dotnet build src --configuration Release -p:Version=${{ env.version }}
 
       # 2. Download icon packs (Replicant cached) and pack IconifyBundle.<Pack> nugets into packs/
       #    (the explicit PackBuilderTests.BuildPacks test, run on its own via a filter). IntegrationTests
@@ -60,7 +80,7 @@ jobs:
       - name: Web tests
         run: dotnet test sample/IconifyBundle.Web.Tests --configuration Release --no-build --results-directory TestResults --logger trx
 
-      - name: Upload snapshot diffs
+      - name: Upload received snapshots on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -68,18 +88,33 @@ jobs:
           path: '**/*.received.*'
           if-no-files-found: ignore
 
-      - name: Upload nugets
-        uses: actions/upload-artifact@v4
+      # Publishable packages only: the core packages (GeneratePackageOnBuild into nugets/) and the
+      # icon pack packages (PackBuilder into packs/). Test and sample projects are IsPackable=false.
+      - uses: actions/upload-artifact@v4
         with:
-          name: nugets
+          name: packages
           path: |
             nugets/*.nupkg
             packs/*.nupkg
+          if-no-files-found: error
 
-      - name: Upload coverage
-        if: always()
-        uses: actions/upload-artifact@v4
+      # Trusted publishing: no stored API key. nuget.org validates GitHub's OIDC token against the
+      # policy naming this repository and this workflow file, and returns a key good for an hour —
+      # so this stays immediately before the push.
+      - name: NuGet login
+        id: login
+        uses: NuGet/login@v1
         with:
-          name: coverage
-          path: TestResults/*.cobertura.xml
-          if-no-files-found: ignore
+          # The nuget.org account the trusted publishing policy belongs to.
+          user: SimonCropp
+
+      - name: Push to nuget.org
+        shell: bash
+        run: |
+          set -euo pipefail
+          for pattern in "nugets/*.nupkg" "packs/*.nupkg"; do
+            dotnet nuget push "$pattern" \
+              --api-key ${{ steps.login.outputs.NUGET_API_KEY }} \
+              --source https://api.nuget.org/v3/index.json \
+              --skip-duplicate
+          done
