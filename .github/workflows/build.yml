@@ -1,0 +1,83 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+      # SponsorCheck bundles the sponsor list during pack on non-PR builds and needs a
+      # classic PAT (org secret). PR builds skip it.
+      GitHubToken: ${{ secrets.SPONSOR_CHECK_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # 1. Build core: produces IconifyBundle + IconifyBundle.Blazor nupkgs in nugets/
+      - name: Build
+        run: dotnet build src --configuration Release
+
+      # 2. Download icon packs (Replicant cached) and pack IconifyBundle.<Pack> nugets into packs/
+      #    (the explicit PackBuilderTests.BuildPacks test, run on its own via a filter). IntegrationTests
+      #    and sample include packs/ as a local NuGet feed (see their nuget.config) so they can resolve them.
+      - name: Build packs
+        run: src/Tests/bin/Release/net10.0/Tests --no-ansi --no-progress --treenode-filter "/*/*/PackBuilderTests/*" --report-trx --report-trx-filename packbuilder.trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output packbuilder.cobertura.xml
+
+      # 3. Build the integration tests + sample (consume the freshly-built nugets from the local feed)
+      - name: Build integration tests
+        run: dotnet build IntegrationTests --configuration Release
+
+      - name: Build sample
+        run: dotnet build sample --configuration Release
+
+      # 4. Run test suites
+      - name: Unit tests
+        run: src/Tests/bin/Release/net10.0/Tests --no-ansi --no-progress --report-trx --report-trx-filename unit.trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output unit.cobertura.xml
+
+      - name: Integration tests
+        run: IntegrationTests/IntegrationTests/bin/Release/net10.0/IntegrationTests --no-ansi --no-progress --report-trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output integration.cobertura.xml
+
+      - name: Disk mode tests
+        run: IntegrationTests/DiskModeConsumer/bin/Release/net10.0/DiskModeConsumer --no-ansi --no-progress --report-trx --results-directory TestResults --coverage --coverage-output-format cobertura --coverage-output disk.cobertura.xml
+
+      - name: Install Playwright
+        shell: pwsh
+        run: sample/IconifyBundle.Web.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Web tests
+        run: dotnet test sample/IconifyBundle.Web.Tests --configuration Release --no-build --results-directory TestResults --logger trx
+
+      - name: Upload snapshot diffs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: received
+          path: '**/*.received.*'
+          if-no-files-found: ignore
+
+      - name: Upload nugets
+        uses: actions/upload-artifact@v4
+        with:
+          name: nugets
+          path: |
+            nugets/*.nupkg
+            packs/*.nupkg
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: TestResults/*.cobertura.xml
+          if-no-files-found: ignore
