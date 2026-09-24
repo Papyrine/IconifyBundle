@@ -1,34 +1,73 @@
-name: build
+name: Build
 
 on:
   push:
-    # Branches only: tag pushes are built, tested and published by release.yml.
-    branches: ['**']
+    branches: [main]
+    tags: ['*']
   pull_request:
   workflow_dispatch:
+
+# Read only by default. The publish job asks for the OIDC token it needs itself.
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_NOLOGO: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     env:
-      DOTNET_NOLOGO: true
-      DOTNET_CLI_TELEMETRY_OPTOUT: true
-      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
       # SponsorCheck bundles the sponsor list during pack on non-PR builds and needs a
       # classic PAT (org secret). PR builds skip it.
       GitHubToken: ${{ secrets.SPONSOR_CHECK_TOKEN }}
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v7
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
+      # Keyed on everything that decides the package graph. restore-keys lets a changed graph start
+      # from the previous cache rather than empty.
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('global.json', '**/Directory.Packages.props', '**/Directory.Build.props', '**/*.csproj', '**/*.fsproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # The tag is the version: tag 1.2.3 (or v1.2.3) builds 1.2.3. Version.props is the single
+      # source of truth for IconifyBundleVersion (src/Directory.Build.props, the IntegrationTests and
+      # sample package pins, and the PackBuilder test which reads the file at runtime to version the
+      # icon pack nugets), so the tag version is written into it rather than only passed as
+      # -p:Version, which would leave the packs and the consumer pins on the old version.
+      - name: Resolve the version from the tag
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME -replace '^v', ''
+          "VERSION_ARGUMENT=-p:Version=$version" >> $env:GITHUB_ENV
+          $path = 'Version.props'
+          $content = Get-Content $path -Raw
+          $updated = $content -replace '<IconifyBundleVersion>[^<]*</IconifyBundleVersion>', "<IconifyBundleVersion>$version</IconifyBundleVersion>"
+          if ($updated -eq $content -and $content -notmatch "<IconifyBundleVersion>$([regex]::Escape($version))</IconifyBundleVersion>") {
+            throw "Failed to set IconifyBundleVersion in $path"
+          }
+          Set-Content $path $updated -NoNewline
+
       # 1. Build core: produces IconifyBundle + IconifyBundle.Blazor nupkgs in nugets/
       - name: Build
-        run: dotnet build src --configuration Release
+        run: dotnet build src --configuration Release ${{ env.VERSION_ARGUMENT }}
 
       # 2. Download icon packs (Replicant cached) and pack IconifyBundle.<Pack> nugets into packs/
       #    (the explicit PackBuilderTests.BuildPacks test, run on its own via a filter). IntegrationTests
@@ -60,26 +99,63 @@ jobs:
       - name: Web tests
         run: dotnet test sample/IconifyBundle.Web.Tests --configuration Release --no-build --results-directory TestResults --logger trx
 
-      - name: Upload snapshot diffs
+      - name: Upload received on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: received
           path: '**/*.received.*'
           if-no-files-found: ignore
+          retention-days: 14
 
-      - name: Upload nugets
-        uses: actions/upload-artifact@v4
+      # Publishable packages only: the core packages (GeneratePackageOnBuild into nugets/) and the
+      # icon pack packages (PackBuilder into packs/). Test and sample projects are IsPackable=false.
+      - name: Upload packages
+        if: success()
+        uses: actions/upload-artifact@v7
         with:
-          name: nugets
+          name: nupkgs
           path: |
             nugets/*.nupkg
             packs/*.nupkg
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Upload coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: TestResults/*.cobertura.xml
           if-no-files-found: ignore
+
+  # Trusted publishing: no stored API key. nuget.org validates GitHub's OIDC token against the
+  # policy naming this repository and this workflow file, and returns a key good for an hour.
+  publish:
+    needs: build
+    environment: nuget
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v8
+        with:
+          name: nupkgs
+          path: packages
+
+      - name: NuGet login
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: SimonCropp
+
+      - name: Push to nuget.org
+        run: >
+          dotnet nuget push "packages/**/*.nupkg"
+          --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
