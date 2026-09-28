@@ -10,7 +10,7 @@ using Microsoft.Playwright;
 namespace IconifyBundle.Web.Tests;
 
 // End-to-end: serves the published WASM output and drives a real browser via Playwright.
-[TestFixture]
+[NotInParallel]
 public class SnapshotTests
 {
     static WebApplication? app;
@@ -18,8 +18,8 @@ public class SnapshotTests
     static IPlaywright? playwright;
     static IBrowser? browser;
 
-    [OneTimeSetUp]
-    public async Task OneTimeSetUp()
+    [Before(Class)]
+    public static async Task OneTimeSetUp()
     {
         port = GetFreePort();
         var testDir = Path.GetDirectoryName(typeof(SnapshotTests).Assembly.Location)!;
@@ -51,8 +51,8 @@ public class SnapshotTests
         browser = await playwright.Chromium.LaunchAsync();
     }
 
-    [OneTimeTearDown]
-    public async Task OneTimeTearDown()
+    [After(Class)]
+    public static async Task OneTimeTearDown()
     {
         if (browser is not null)
         {
@@ -75,7 +75,7 @@ public class SnapshotTests
         await page.WaitForSelectorAsync(".grid svg", new() { Timeout = 60000 });
 
         var count = await page.Locator(".grid svg").CountAsync();
-        Assert.That(count, Is.GreaterThanOrEqualTo(20));
+        await Assert.That(count).IsGreaterThanOrEqualTo(20);
     }
 
     static int GetFreePort()

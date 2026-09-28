@@ -97,7 +97,7 @@ jobs:
         run: sample/IconifyBundle.Web.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
 
       - name: Web tests
-        run: dotnet test sample/IconifyBundle.Web.Tests --configuration Release --no-build --results-directory TestResults --logger trx
+        run: dotnet test --solution sample/Sample.slnx --configuration Release --no-build --results-directory TestResults --report-trx
 
       - name: Upload received on failure
         if: failure()

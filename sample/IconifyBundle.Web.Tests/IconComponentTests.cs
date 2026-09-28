@@ -1,22 +1,21 @@
 namespace IconifyBundle.Web.Tests;
 
-[TestFixture]
 public class IconComponentTests : BunitContext
 {
     static readonly Icon Sample = new("feather", "activity", "<path stroke=\"currentColor\" d=\"M1 1\"/>", 24, 24);
 
     [Test]
-    public void Renders_inline_svg()
+    public async Task Renders_inline_svg()
     {
         var cut = Render<Iconify>(_ => _.Add(c => c.Value, Sample));
 
         var svg = cut.Find("svg");
-        Assert.That(svg.GetAttribute("viewBox"), Is.EqualTo("0 0 24 24"));
-        Assert.That(svg.InnerHtml, Does.Contain("currentColor"));
+        await Assert.That(svg.GetAttribute("viewBox")).IsEqualTo("0 0 24 24");
+        await Assert.That(svg.InnerHtml).Contains("currentColor");
     }
 
     [Test]
-    public void Applies_size_override_and_splatted_attributes()
+    public async Task Applies_size_override_and_splatted_attributes()
     {
         var cut = Render<Iconify>(_ => _
             .Add(c => c.Value, Sample)
@@ -25,23 +24,23 @@ public class IconComponentTests : BunitContext
             .AddUnmatched("class", "my-icon"));
 
         var svg = cut.Find("svg");
-        Assert.That(svg.GetAttribute("width"), Is.EqualTo("48"));
-        Assert.That(svg.GetAttribute("height"), Is.EqualTo("40"));
-        Assert.That(svg.GetAttribute("class"), Is.EqualTo("my-icon"));
+        await Assert.That(svg.GetAttribute("width")).IsEqualTo("48");
+        await Assert.That(svg.GetAttribute("height")).IsEqualTo("40");
+        await Assert.That(svg.GetAttribute("class")).IsEqualTo("my-icon");
     }
 
     [Test]
-    public void Renders_nothing_for_default_icon()
+    public async Task Renders_nothing_for_default_icon()
     {
         var cut = Render<Iconify>();
-        Assert.That(cut.FindAll("svg"), Is.Empty);
+        await Assert.That(cut.FindAll("svg")).IsEmpty();
     }
 
     [Test]
-    public void ToMarkup_produces_full_svg()
+    public async Task ToMarkup_produces_full_svg()
     {
         var markup = Sample.ToMarkup().Value;
-        Assert.That(markup, Does.StartWith("<svg"));
-        Assert.That(markup, Does.Contain("viewBox=\"0 0 24 24\""));
+        await Assert.That(markup).StartsWith("<svg");
+        await Assert.That(markup).Contains("viewBox=\"0 0 24 24\"");
     }
 }

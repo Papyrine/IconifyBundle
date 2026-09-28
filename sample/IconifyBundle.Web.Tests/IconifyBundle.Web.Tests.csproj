@@ -3,6 +3,7 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <OutputType>Exe</OutputType>
     <BlazorPublishDir>$(MSBuildThisFileDirectory)bin\$(Configuration)\blazor-publish\</BlazorPublishDir>
   </PropertyGroup>
 
@@ -16,16 +17,13 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="bunit" />
-    <PackageReference Include="NUnit" />
-    <PackageReference Include="NUnit3TestAdapter" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="TUnit" />
     <PackageReference Include="Microsoft.Playwright" />
     <PackageReference Include="IconifyBundle.Blazor" />
     <ProjectReference Include="..\IconifyBundle.Web\IconifyBundle.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="NUnit.Framework" />
     <Using Include="Bunit" />
     <Using Include="IconifyBundle" />
   </ItemGroup>
