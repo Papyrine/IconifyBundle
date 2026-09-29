@@ -44,7 +44,7 @@ static class GeneratorRunner
         var references = ((string) AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
             .Split(Path.PathSeparator)
             .Where(_ => _.Length > 0)
-            .Select(_ => (MetadataReference) MetadataReference.CreateFromFile(_))
+            .Select(MetadataReference (_) => MetadataReference.CreateFromFile(_))
             .ToList();
 
         // The IconifyBundle runtime, so [IconifyPack]/Icon resolve and usage detection works.
