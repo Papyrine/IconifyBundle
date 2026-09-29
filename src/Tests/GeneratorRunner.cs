@@ -68,10 +68,15 @@ static class GeneratorRunner
 
         // Only the pack data file carries the IconifyBundlePack metadata; razor files (and anything else)
         // are plain additional files, matching how the real build tags them.
-        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) =>
-            textFile.Path.EndsWith(".icondata", StringComparison.Ordinal)
-                ? new FileOptions(prefix)
-                : EmptyOptions.Instance;
+        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile)
+        {
+            if (textFile.Path.EndsWith(".icondata", StringComparison.Ordinal))
+            {
+                return new FileOptions(prefix);
+            }
+
+            return EmptyOptions.Instance;
+        }
     }
 
     sealed class GlobalOptionsImpl(bool disk) : AnalyzerConfigOptions

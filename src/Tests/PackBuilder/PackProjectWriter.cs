@@ -250,17 +250,22 @@ static class PackProjectWriter
 
     // Canonical url for a license spdx id, used when Iconify ships the id but no url so the title still renders
     // as a link rather than bare text. Each maps to the license's authoritative reference text.
-    static string? CanonicalLicenseUrl(string? spdx) =>
-        spdx is null
-            ? null
-            : spdx.ToUpperInvariant() switch
-            {
-                "APACHE-2.0" => "https://www.apache.org/licenses/LICENSE-2.0",
-                "MPL-2.0" => "https://www.mozilla.org/en-US/MPL/2.0/",
-                "MIT" => "https://opensource.org/license/mit",
-                "OFL-1.1" => "https://openfontlicense.org/",
-                _ => null
-            };
+    static string? CanonicalLicenseUrl(string? spdx)
+    {
+        if (spdx is null)
+        {
+            return null;
+        }
+
+        return spdx.ToUpperInvariant() switch
+        {
+            "APACHE-2.0" => "https://www.apache.org/licenses/LICENSE-2.0",
+            "MPL-2.0" => "https://www.mozilla.org/en-US/MPL/2.0/",
+            "MIT" => "https://opensource.org/license/mit",
+            "OFL-1.1" => "https://openfontlicense.org/",
+            _ => null
+        };
+    }
 
     static string Escape(string value) =>
         value

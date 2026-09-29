@@ -201,10 +201,15 @@ public static class IconifyJson
         return ReadIcondata(stream);
     }
 
-    static JsonWriterOptions WriterOptions(IconifyJsonOptions options) =>
-        options.Indented
-            ? defaultWriterOptions with { Indented = true }
-            : defaultWriterOptions;
+    static JsonWriterOptions WriterOptions(IconifyJsonOptions options)
+    {
+        if (options.Indented)
+        {
+            return defaultWriterOptions with { Indented = true };
+        }
+
+        return defaultWriterOptions;
+    }
 
     static (string Prefix, List<Icon> Icons) ValidateAndMaterialise(IEnumerable<Icon> icons)
     {
@@ -343,11 +348,16 @@ public static class IconifyJson
         return new(prefix, icons, info);
     }
 
-    static string? TryGetString(JsonElement element, string propertyName) =>
-        element.TryGetProperty(propertyName, out var property) &&
-        property.ValueKind == JsonValueKind.String
-            ? property.GetString()
-            : null;
+    static string? TryGetString(JsonElement element, string propertyName)
+    {
+        if (element.TryGetProperty(propertyName, out var property) &&
+                property.ValueKind == JsonValueKind.String)
+        {
+            return property.GetString();
+        }
+
+        return null;
+    }
 
     // Parses the .icondata pack format produced by IconifyBundle.Generator.Manifest:
     // 'key=value' header lines, a blank line, then 'name\twidth\theight\tbody' per icon.
