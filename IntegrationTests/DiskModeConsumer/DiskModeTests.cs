@@ -43,7 +43,8 @@ public class DiskModeTests
     [Test]
     public async Task Publish_includes_used_svgs()
     {
-        var (project, configuration) = LocateProject();
+        var project = Path.GetFullPath(ProjectFiles.ProjectFile);
+        var configuration = BuildConfiguration();
         var publishDir = Path.Combine(Path.GetTempPath(), "iconifybundle-publish-" + Guid.NewGuid().ToString("N"));
 
         var (exitCode, output) = await RunDotnet(
@@ -69,29 +70,22 @@ public class DiskModeTests
         }
     }
 
-    // Walks up from the running assembly (bin/<Configuration>/<tfm>/) to the project file, and reads the
-    // build configuration from the output path so the --no-build publish matches what was built.
-    static (string Project, string Configuration) LocateProject()
+    // Reads the build configuration from the running assembly's output path (bin/<Configuration>/<tfm>/)
+    // so the --no-build publish matches what was built.
+    static string BuildConfiguration()
     {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        string? configuration = null;
-        while (dir is not null)
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
         {
-            if (dir.Parent?.Name == "bin")
+            if (directory.Parent?.Name == "bin")
             {
-                configuration = dir.Name;
+                return directory.Name;
             }
 
-            var project = Path.Combine(dir.FullName, "DiskModeConsumer.csproj");
-            if (File.Exists(project))
-            {
-                return (project, configuration ?? "Debug");
-            }
-
-            dir = dir.Parent;
+            directory = directory.Parent;
         }
 
-        throw new FileNotFoundException("Could not locate DiskModeConsumer.csproj above the test output.");
+        return "Debug";
     }
 
     static async Task<(int ExitCode, string Output)> RunDotnet(string arguments)

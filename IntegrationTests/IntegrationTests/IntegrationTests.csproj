@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="TUnit" />
+    <PackageReference Include="ProjectFiles" PrivateAssets="all" />
     <PackageReference Include="IconifyBundle.Feather" />
   </ItemGroup>
 

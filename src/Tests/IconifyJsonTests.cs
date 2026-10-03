@@ -199,13 +199,7 @@ public class IconifyJsonTests
         // IconifyBundle 0.1.0 by package reference; we want the in-source build for everything else).
         // The test runner's configuration does not have to match Feather's - probe both, prefer whatever's
         // freshest, so the test works whether Feather was built Release or Debug.
-        var solutionDir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (solutionDir is not null && !Directory.Exists(Path.Combine(solutionDir.FullName, "packs")))
-        {
-            solutionDir = solutionDir.Parent;
-        }
-
-        var featherDir = Path.Combine(solutionDir!.FullName, "packs", "IconifyBundle.Feather", "bin");
+        var featherDir = Path.Combine(RepoPaths.Packs, "IconifyBundle.Feather", "bin");
         var candidates = new[] { "Release", "Debug" }
             .Select(configuration => Path.Combine(featherDir, configuration, "net8.0", "IconifyBundle.Feather.dll"))
             .Where(File.Exists)

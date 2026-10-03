@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <PackageReference Include="TUnit" />
+    <PackageReference Include="ProjectFiles" PrivateAssets="all" />
     <!-- A single pack reference suffices: the generator ships as an analyzer inside the pack. -->
     <PackageReference Include="IconifyBundle.Feather" />
   </ItemGroup>

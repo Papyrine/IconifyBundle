@@ -12,7 +12,8 @@ public class TrimmingTests
     [Explicit]
     public async Task Materialised_icons_survive_trimming_and_dynamic_misses_throw()
     {
-        var project = LocateProject("TrimmedConsumer", "TrimmedConsumer.csproj");
+        var project = Path.GetFullPath(
+            Path.Combine(ProjectFiles.ProjectDirectory, "..", "TrimmedConsumer", "TrimmedConsumer.csproj"));
         var rid = RuntimeInformation.RuntimeIdentifier;
         var outDir = Path.Combine(Path.GetTempPath(), "iconifybundle-trim-" + Guid.NewGuid().ToString("N"));
 
@@ -45,23 +46,6 @@ public class TrimmingTests
                 // best effort cleanup
             }
         }
-    }
-
-    static string LocateProject(string folder, string file)
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null)
-        {
-            var project = Path.Combine(dir.FullName, folder, file);
-            if (File.Exists(project))
-            {
-                return project;
-            }
-
-            dir = dir.Parent;
-        }
-
-        throw new FileNotFoundException($"Could not locate {folder}/{file} above the test output.");
     }
 
     static async Task<(int ExitCode, string Output)> Run(string fileName, string arguments)
