@@ -4,7 +4,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="TUnit" Version="1.73.5" />
+    <PackageVersion Include="TUnit" Version="1.73.19" />
     <PackageVersion Include="ProjectFiles" Version="1.6.0" />
     <PackageVersion Include="IconifyBundle" Version="$(IconifyBundleVersion)" />
     <PackageVersion Include="IconifyBundle.Feather" Version="$(IconifyBundleVersion)" />
