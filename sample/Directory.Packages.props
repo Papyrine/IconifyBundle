@@ -11,13 +11,13 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Blazor WebAssembly -->
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.12" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.13" />
   </ItemGroup>
   <ItemGroup>
     <!-- Tests -->
     <PackageVersion Include="bunit" Version="2.11.3" />
-    <PackageVersion Include="TUnit" Version="1.74.0" />
+    <PackageVersion Include="TUnit" Version="1.75.0" />
     <PackageVersion Include="Microsoft.Playwright" Version="1.63.0" />
   </ItemGroup>
 </Project>
