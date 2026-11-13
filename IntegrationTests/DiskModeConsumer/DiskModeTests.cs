@@ -56,6 +56,9 @@ public class DiskModeTests
             var activity = Path.Combine(publishDir, "iconifybundle", "feather", "activity.svg");
             await Assert.That(File.Exists(activity)).IsTrue();
             await Assert.That((await File.ReadAllTextAsync(activity)).Contains("<svg")).IsTrue();
+            // The rasters, in their size folders, are published too.
+            var png = Path.Combine(publishDir, "iconifybundle", "feather", "16", "activity.png");
+            await Assert.That(File.Exists(png)).IsTrue();
         }
         finally
         {

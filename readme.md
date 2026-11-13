@@ -4,7 +4,7 @@
 [![Build status](https://github.com/Papyrine/IconifyBundle/actions/workflows/build.yml/badge.svg)](https://github.com/Papyrine/IconifyBundle/actions/workflows/build.yml)
 [![NuGet Status](https://img.shields.io/nuget/v/IconifyBundle.svg)](https://www.nuget.org/packages/IconifyBundle/)
 
-Strongly-typed [Iconify](https://iconify.design/) icons for .NET. Only the referenced icons are bundled - either baked into the consuming assembly (Resource mode) or written to the build output as `.svg` files (Disk mode). Blazor helpers included.
+Strongly-typed [Iconify](https://iconify.design/) icons for .NET. Only the referenced icons are bundled - either baked into the consuming assembly (Resource mode) or written to the build output as `.svg` files (Disk mode), optionally with [PNG/BMP renderings](#png-and-bmp) made at build time. Blazor helpers included.
 
 
 ## Open Source Maintenance Fee
@@ -53,6 +53,103 @@ The referenced icons are written to the build and publish output as `.svg` files
 > `not materialised` error means the icon was never referenced through a member access
 > the generator could see - not that trimming removed it. Materialised icons run their
 > registration from a module initializer that the trimmer preserves.
+
+
+### PNG and BMP
+
+For UI stacks that cannot draw SVG (WinForms, for example), the referenced icons can also be rendered to
+PNG or BMP **at build time**, in either mode, so the app needs no SVG renderer at runtime:
+
+```xml
+<PropertyGroup>
+  <IconifyBundleRasterSizes>16;20;24;32</IconifyBundleRasterSizes>
+  <IconifyBundleRasterFormat>png</IconifyBundleRasterFormat>
+  <IconifyBundleRasterColor>#1E90FF</IconifyBundleRasterColor>
+</PropertyGroup>
+```
+
+| Property | Value | Default |
+|---|---|---|
+| `IconifyBundleRasterSizes` | Pixel sizes, separated by `;` or `,` (1 to 1024). Rasters are produced only when this is set. | none |
+| `IconifyBundleRasterFormat` | `png`, `bmp`, or `png;bmp`. | `png` |
+| `IconifyBundleRasterColor` | The colour used for `currentColor`: `#RGB`, `#RRGGBB`, `#RRGGBBAA`, or a CSS colour name. Colours written into an icon itself are kept. | `#000000` |
+
+Each raster is a square of the given size, with the icon scaled to fit and centred (as an `<svg>` of that
+width and height would show it), on a transparent background. The selection rule is the same as for the
+SVG: only icons referenced through the strongly-typed API are rendered. Each listed size is rendered
+separately, so list every size the app draws at (for example its icon sizes at each DPI scale: 16px and
+20px icons at 100-200% need `16;20;24;25;28;30;32;35;40`). The colour is fixed at build time.
+
+In **Resource mode** the bytes are baked into the assembly next to the SVG:
+
+<!-- snippet: RasterResourceUsage -->
+<a id='snippet-RasterResourceUsage'></a>
+```cs
+// A PNG rendered at build time, at any size listed in IconifyBundleRasterSizes...
+using var stream = Feather.Activity.OpenPng(24);
+
+// ...or its bytes, e.g. for a data: URI.
+var png = Feather.Activity.Png(16);
+
+// The sizes produced for the icon: [16, 24].
+var sizes = Feather.Activity.PngSizes;
+```
+<sup><a href='/IntegrationTests/IntegrationTests/RasterTests.cs#L13-L22' title='Snippet source file'>snippet source</a> | <a href='#snippet-RasterResourceUsage' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+In **Disk mode** the files are written to the build and publish output as
+`iconifybundle/<prefix>/<size>/<name>.<format>`, with a path member per format. `Icon.OpenPng` and `Icon.Png`
+read those files, so the same code works in both modes:
+
+<!-- snippet: RasterDiskUsage -->
+<a id='snippet-RasterDiskUsage'></a>
+```cs
+// iconifybundle/feather/16/activity.png under the output directory.
+var path = Feather.ActivityPngPath(16);
+
+// The same file, for an icon picked by name.
+var byName = Feather.PngPathOf("activity", 16);
+
+// Icon.OpenPng/Png read the file in Disk mode, so the code is the same in both modes.
+using var stream = Feather.Activity.OpenPng(16);
+```
+<sup><a href='/IntegrationTests/DiskModeConsumer/DiskRasterTests.cs#L10-L19' title='Snippet source file'>snippet source</a> | <a href='#snippet-RasterDiskUsage' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`OpenBmp`, `Bmp` and `BmpSizes` (and `...BmpPath(size)`/`BmpPathOf` in Disk mode) are the BMP equivalents.
+Asking for a size or format that was not produced throws a `KeyNotFoundException` naming the sizes that were.
+
+A WinForms example, picking the size for the control's DPI:
+
+```csharp
+var size = (int)Math.Round(16 * control.DeviceDpi / 96.0);
+// GDI+ reads the stream for the bitmap's lifetime, so it is not disposed here.
+var bitmap = new Bitmap(Fluent.Folder24Regular.OpenPng(size));
+```
+
+PNGs are 8-bit RGBA. BMPs are 32-bit BGRA with a `BITMAPV5HEADER` alpha mask, which GDI+ and WIC load with
+transparency. Both are tagged 96 DPI.
+
+#### Rendering
+
+The rasters are drawn by a small rasteriser built into IconifyBundle's source generator (Resource mode) and
+build task (Disk mode); it adds nothing to the runtime package. It is fully managed, so it runs inside the
+compiler and MSBuild on any OS, and its output (including the PNG compression) does not depend on the host,
+so builds stay deterministic and both modes produce identical bytes.
+
+It covers what monochrome icon sets are made of: `path`, the basic shapes (`rect`, `circle`, `ellipse`,
+`line`, `polyline`, `polygon`), `g` and `use`, nonzero and even-odd fills, strokes (caps, joins, miter limit),
+opacity, transforms, `style` attributes and `currentColor` - every icon in sets such as Feather, Fluent,
+Lucide, Material Design Icons, Material Symbols, Tabler or Phosphor, and about 95% of all Iconify icons.
+Masks, clip paths, filters, dashes, animation and text are not rendered, and gradients are drawn in the
+average of their stops; these occur mostly in the multicolour emoji sets and the animated sets.
+
+Build diagnostics:
+
+* `IB0001` (error): the raster properties are not valid.
+* `IB0002` (warning): a referenced icon uses SVG features the rasteriser does not render, so its PNG/BMP may
+  differ from the SVG.
+* `IB0003` (warning): a referenced icon could not be rasterised; it gets no PNG/BMP.
 
 
 ## Usage

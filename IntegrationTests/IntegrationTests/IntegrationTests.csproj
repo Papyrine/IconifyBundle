@@ -8,11 +8,17 @@
     <!-- Default (Resource mode): the generator bakes only the referenced icons into this assembly. A
          single reference to IconifyBundle.Feather suffices - it carries both the typed API and the
          generator (as an analyzer), and pulls the IconifyBundle runtime transitively. -->
+    <!-- Also render the referenced icons to PNG and BMP at build time and bake those in too
+         (Feather.Activity.OpenPng(16) etc.). -->
+    <IconifyBundleRasterFormat>png;bmp</IconifyBundleRasterFormat>
+    <IconifyBundleRasterSizes>16;24</IconifyBundleRasterSizes>
+    <IconifyBundleRasterColor>#1E90FF</IconifyBundleRasterColor>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="TUnit" />
     <PackageReference Include="ProjectFiles" PrivateAssets="all" />
+    <PackageReference Include="Verify.TUnit" />
     <PackageReference Include="IconifyBundle.Feather" />
   </ItemGroup>
 

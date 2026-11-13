@@ -5,7 +5,10 @@ static class GeneratorRunner
         bool disk,
         string prefix = "feather",
         string source = "public class Dummy;",
-        string? razor = null)
+        string? razor = null,
+        string? rasterFormats = null,
+        string? rasterSizes = null,
+        string? rasterColor = null)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
 
@@ -32,7 +35,7 @@ static class GeneratorRunner
             generators: [new IconifyBundleGenerator().AsSourceGenerator()],
             additionalTexts: additionalTexts.ToImmutable(),
             parseOptions: parseOptions,
-            optionsProvider: new TestOptionsProvider(disk, prefix));
+            optionsProvider: new TestOptionsProvider(disk, prefix, rasterFormats, rasterSizes, rasterColor));
 
         return driver.RunGenerators(compilation).GetRunResult();
     }
@@ -60,9 +63,9 @@ static class GeneratorRunner
             SourceText.From(text);
     }
 
-    sealed class TestOptionsProvider(bool disk, string prefix) : AnalyzerConfigOptionsProvider
+    sealed class TestOptionsProvider(bool disk, string prefix, string? rasterFormats, string? rasterSizes, string? rasterColor) : AnalyzerConfigOptionsProvider
     {
-        public override AnalyzerConfigOptions GlobalOptions { get; } = new GlobalOptionsImpl(disk);
+        public override AnalyzerConfigOptions GlobalOptions { get; } = new GlobalOptionsImpl(disk, rasterFormats, rasterSizes, rasterColor);
 
         public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => EmptyOptions.Instance;
 
@@ -79,7 +82,7 @@ static class GeneratorRunner
         }
     }
 
-    sealed class GlobalOptionsImpl(bool disk) : AnalyzerConfigOptions
+    sealed class GlobalOptionsImpl(bool disk, string? rasterFormats, string? rasterSizes, string? rasterColor) : AnalyzerConfigOptions
     {
         public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value)
         {
@@ -89,8 +92,15 @@ static class GeneratorRunner
                 return true;
             }
 
-            value = null;
-            return false;
+            // The names and forms IconifyBundle.targets hands over (comma lists, colour without '#').
+            value = key switch
+            {
+                "build_property._IconifyBundleRasterFormat" => rasterFormats,
+                "build_property._IconifyBundleRasterSizes" => rasterSizes,
+                "build_property._IconifyBundleRasterColor" => rasterColor,
+                _ => null
+            };
+            return value != null;
         }
     }
 

@@ -47,4 +47,22 @@ public sealed class IconPack
     /// </summary>
     public string PathOf(string name) =>
         Path.Combine(AppContext.BaseDirectory, "iconifybundle", Prefix, name + ".svg");
+
+    /// <summary>
+    /// The on-disk path to the icon's PNG at <paramref name="size"/> pixels:
+    /// <c>iconifybundle/&lt;prefix&gt;/&lt;size&gt;/&lt;name&gt;.png</c> under the application base directory.
+    /// The file is present only in Disk mode with <c>IconifyBundleRasterSizes</c> set, and only for icons
+    /// that were materialised.
+    /// </summary>
+    public string PngPathOf(string name, int size) =>
+        RasterPathOf(name, "png", size);
+
+    /// <summary>
+    /// The on-disk path to the icon's BMP at <paramref name="size"/> pixels (see <see cref="PngPathOf"/>).
+    /// </summary>
+    public string BmpPathOf(string name, int size) =>
+        RasterPathOf(name, "bmp", size);
+
+    internal string RasterPathOf(string name, string format, int size) =>
+        Path.Combine(AppContext.BaseDirectory, "iconifybundle", Prefix, size.ToString(CultureInfo.InvariantCulture), name + "." + format);
 }

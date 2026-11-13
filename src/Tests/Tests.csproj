@@ -21,4 +21,10 @@
     <ProjectReference Include="..\IconifyBundle.Generator\IconifyBundle.Generator.csproj" />
   </ItemGroup>
 
+  <!-- The rasteriser is internal to the generator and the build task; the tests compile their own copy of the
+       same source to exercise it directly. -->
+  <ItemGroup>
+    <Compile Include="..\Raster\*.cs" Link="Raster\%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

@@ -13,6 +13,21 @@
     </ItemGroup>
   </Target>
 
+  <!-- Raster settings for the generator, which renders the used icons into the assembly in Resource mode
+       (and registers the files the Disk-mode task writes). Roslyn's analyzer config treats ';' and '#' as
+       the start of a comment, so the lists are handed over comma-separated and the colour without its '#'.
+       Set here, after the project body, so the project's own values are seen. -->
+  <PropertyGroup>
+    <_IconifyBundleRasterFormat>$(IconifyBundleRasterFormat.Replace(';', ','))</_IconifyBundleRasterFormat>
+    <_IconifyBundleRasterSizes>$(IconifyBundleRasterSizes.Replace(';', ','))</_IconifyBundleRasterSizes>
+    <_IconifyBundleRasterColor>$(IconifyBundleRasterColor.Replace('#', ''))</_IconifyBundleRasterColor>
+  </PropertyGroup>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="_IconifyBundleRasterFormat" />
+    <CompilerVisibleProperty Include="_IconifyBundleRasterSizes" />
+    <CompilerVisibleProperty Include="_IconifyBundleRasterColor" />
+  </ItemGroup>
+
   <!-- Register the Disk-mode build task once, here, from the IconifyBundle package's tasks/ folder. Every
        pack pulls IconifyBundle in as a transitive dependency, so its build/buildTransitive .targets are
        imported into the consumer before the per-pack .targets run their <WriteUsedIcons /> invocation -

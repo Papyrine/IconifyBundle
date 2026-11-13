@@ -6,8 +6,16 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <IsPackable>false</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
-    <NoWarn>$(NoWarn);RS1041;NU5128</NoWarn>
+    <!-- RS2008: the IB000x diagnostics (see Diagnostics.cs) are documented in the readme rather than in
+         analyzer release-tracking files. -->
+    <NoWarn>$(NoWarn);RS1041;RS2008;NU5128</NoWarn>
   </PropertyGroup>
+
+  <!-- The build-time rasteriser, shared as source with IconifyBundle.Build (Disk mode) so both modes
+       produce identical bytes. -->
+  <ItemGroup>
+    <Compile Include="..\Raster\*.cs" Link="Raster\%(Filename)%(Extension)" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />

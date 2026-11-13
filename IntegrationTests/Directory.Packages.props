@@ -6,6 +6,7 @@
   <ItemGroup>
     <PackageVersion Include="TUnit" Version="1.78.0" />
     <PackageVersion Include="ProjectFiles" Version="1.6.0" />
+    <PackageVersion Include="Verify.TUnit" Version="33.3.4" />
     <PackageVersion Include="IconifyBundle" Version="$(IconifyBundleVersion)" />
     <PackageVersion Include="IconifyBundle.Feather" Version="$(IconifyBundleVersion)" />
   </ItemGroup>

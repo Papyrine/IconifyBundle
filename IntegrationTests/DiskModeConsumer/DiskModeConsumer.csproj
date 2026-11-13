@@ -9,6 +9,9 @@
          generator emits the file-path members (e.g. Feather.ActivityPath). Mutually exclusive with the
          default Resource mode. -->
     <IconifyBundleMode>Disk</IconifyBundleMode>
+    <!-- Also render the referenced icons to PNG (the default format) at build time, written next to the
+         .svg files as iconifybundle/feather/<size>/<name>.png, with Feather.ActivityPngPath(size) members. -->
+    <IconifyBundleRasterSizes>16;24</IconifyBundleRasterSizes>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,0 +1,17 @@
+﻿{
+  Diagnostics: [
+    {
+      Message: Icon 'feather:activity' uses SVG features the build-time rasteriser does not render (stroke-dasharray); its PNG/BMP may differ from the SVG,
+      Severity: Warning,
+      WarningLevel: 1,
+      Descriptor: {
+        Id: IB0002,
+        Title: Icon uses SVG features the build-time rasteriser does not render,
+        MessageFormat: Icon '{0}:{1}' uses SVG features the build-time rasteriser does not render ({2}); its PNG/BMP may differ from the SVG,
+        Category: IconifyBundle,
+        DefaultSeverity: Warning,
+        IsEnabledByDefault: true
+      }
+    }
+  ]
+}

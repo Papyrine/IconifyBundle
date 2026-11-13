@@ -61,4 +61,70 @@ public class IconifyBundleGeneratorTests
     [Test]
     public Task Resource_mode_detects_razor_usage() =>
         Verify(GeneratorRunner.Run(featherData, disk: false, razor: razorUsage));
+
+    // A real (visible) icon body, so the raster snapshots hold something.
+    static readonly string rasterData =
+        $"""
+         prefix=feather
+         class=Feather
+
+         {Manifest.FormatDataLine("activity", 24, 24, RasterTests.FeatherActivity)}
+         {Manifest.FormatDataLine("alert-circle", 24, 24, "<circle cx=\"12\" cy=\"12\" r=\"10\"/>")}
+
+         """;
+
+    // Rasters are rendered into the assembly: a module initializer registering each (icon, format, size)
+    // slice of one constant byte span.
+    [Test]
+    public Task Resource_mode_with_rasters_embeds_the_used_icons() =>
+        Verify(GeneratorRunner.Run(rasterData, disk: false, source: usage, rasterFormats: "png,bmp", rasterSizes: "8", rasterColor: "336699"));
+
+    // Disk mode: the build task writes the files; the generator registers them and emits the per-format
+    // path members.
+    [Test]
+    public Task Disk_mode_with_rasters_emits_raster_path_members_and_registrations() =>
+        Verify(GeneratorRunner.Run(rasterData, disk: true, source: usage, rasterFormats: "png,bmp", rasterSizes: "16,24"));
+
+    // A raster path member (Feather.AlertCirclePngPath(16)) is a use of its icon.
+    [Test]
+    public async Task Raster_path_member_counts_as_a_use()
+    {
+        const string source =
+            """
+            namespace IconifyBundle
+            {
+                [IconifyPack("feather")]
+                public static class Feather;
+            }
+
+            public class Use
+            {
+                public static object A = IconifyBundle.Feather.AlertCirclePngPath(16);
+            }
+            """;
+
+        var result = GeneratorRunner.Run(rasterData, disk: true, source: source, rasterSizes: "16");
+        var registration = result.Results.Single().GeneratedSources.Single(_ => _.HintName == "Feather.Rasters.g.cs");
+
+        await Assert.That(registration.SourceText.ToString()).Contains("""RegisterRasterFile("feather", "alert-circle", "png", 16)""");
+    }
+
+    [Test]
+    public Task Invalid_raster_properties_report_IB0001() =>
+        Verify(GeneratorRunner.Run(rasterData, disk: false, source: usage, rasterFormats: "gif", rasterSizes: "16"));
+
+    [Test]
+    public Task Unsupported_svg_features_report_IB0002()
+    {
+        var data =
+            $"""
+             prefix=feather
+             class=Feather
+
+             {Manifest.FormatDataLine("activity", 24, 24, "<path stroke=\"currentColor\" stroke-dasharray=\"2\" d=\"M0 12h24\"/>")}
+
+             """;
+
+        return Verify(GeneratorRunner.Run(data, disk: false, source: usage, rasterSizes: "4"));
+    }
 }
