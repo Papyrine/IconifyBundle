@@ -13,3 +13,6 @@
 *.verified.txt text eol=lf working-tree-encoding=UTF-8
 *.verified.json text eol=lf working-tree-encoding=UTF-8
 *.verified.svg text eol=lf working-tree-encoding=UTF-8
+*.verified.cs text eol=lf working-tree-encoding=UTF-8
+*.verified.png binary
+*.verified.bmp binary

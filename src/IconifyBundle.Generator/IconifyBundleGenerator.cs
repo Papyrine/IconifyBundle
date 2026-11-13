@@ -60,46 +60,174 @@ public class IconifyBundleGenerator :
             .Where(static text => IsRazor(text.Path))
             .SelectMany(static (text, token) => ScanRazor(text, token));
 
-        // Disk mode: strongly-typed per-icon path members (e.g. Feather.ActivityPath), emitted for every
-        // icon so any can be referenced. (Only referenced icons are copied to output.)
+        // Optional PNG/BMP renderings (IconifyBundleRasterSizes etc.), handed over by IconifyBundle.targets.
+        var raster = context.AnalyzerConfigOptionsProvider.Select(static (provider, _) =>
+        {
+            var options = provider.GlobalOptions;
+            options.TryGetValue("build_property._IconifyBundleRasterFormat", out var formats);
+            options.TryGetValue("build_property._IconifyBundleRasterSizes", out var sizes);
+            options.TryGetValue("build_property._IconifyBundleRasterColor", out var color);
+            return RasterOptions.Parse(formats, sizes, color);
+        });
+
         context.RegisterSourceOutput(
-            manifests.Combine(disk),
-            static (productionContext, pair) =>
+            raster,
+            static (productionContext, options) =>
             {
-                var (manifest, disk) = pair;
-                if (disk)
+                if (options.Error != null)
                 {
-                    productionContext.AddSource($"{manifest.ClassName}.Paths.g.cs", Emitter.EmitPathExtensions(manifest));
+                    productionContext.ReportDiagnostic(Diagnostic.Create(Diagnostics.InvalidRasterOptions, Location.None, options.Error));
                 }
             });
 
-        // Both modes: the module initializer that materialises the used icons.
-        var registration = manifests.Collect()
-            .Combine(usages.Collect())
-            .Combine(razorUsages.Collect())
-            .Combine(disk);
+        // Disk mode: strongly-typed per-icon path members (e.g. Feather.ActivityPath, and with rasters
+        // Feather.ActivityPngPath(size)), emitted for every icon so any can be referenced. (Only referenced
+        // icons are copied to output.)
         context.RegisterSourceOutput(
-            registration,
+            manifests.Combine(disk).Combine(raster),
             static (productionContext, data) =>
             {
-                var (((manifests, usages), razorUsages), disk) = data;
+                var ((manifest, disk), raster) = data;
+                if (disk)
+                {
+                    productionContext.AddSource($"{manifest.ClassName}.Paths.g.cs", Emitter.EmitPathExtensions(manifest, raster.Formats));
+                }
+            });
+
+        // The icons used from each pack. Compared by value, so the outputs below re-run only when the set of
+        // used icons changes.
+        var packUsages = manifests.Collect()
+            .Combine(usages.Collect())
+            .Combine(razorUsages.Collect())
+            .SelectMany(static (data, _) =>
+            {
+                var ((manifests, usages), razorUsages) = data;
+                var result = ImmutableArray.CreateBuilder<PackUsage>();
                 foreach (var manifest in manifests)
                 {
                     var used = ResolveUsed(manifest, usages, razorUsages);
-                    if (used.Count == 0)
+                    if (used.Count > 0)
+                    {
+                        result.Add(new(manifest, used));
+                    }
+                }
+
+                return result.ToImmutable();
+            });
+
+        // Both modes: the module initializer that materialises the used icons.
+        context.RegisterSourceOutput(
+            packUsages.Combine(disk),
+            static (productionContext, data) =>
+            {
+                var (usage, disk) = data;
+                var manifest = usage.Manifest;
+                if (disk)
+                {
+                    productionContext.AddSource($"{manifest.ClassName}.Registration.g.cs", Emitter.EmitDiskRegistration(manifest, usage.Used));
+                    // The pack's build target reads this list to copy the matching .svg files to output.
+                    productionContext.AddSource($"{manifest.ClassName}.Used.g.cs", Emitter.EmitUsedList(manifest, usage.Used));
+                    return;
+                }
+
+                productionContext.AddSource($"{manifest.ClassName}.Registration.g.cs", Emitter.EmitResourceRegistration(manifest, usage.Used));
+            });
+
+        // Disk mode rasters: the pack's build target renders the files; register them, and warn here about
+        // SVG features the rasteriser skips (the task cannot report against the compilation).
+        context.RegisterSourceOutput(
+            packUsages.Combine(raster).Combine(disk),
+            static (productionContext, data) =>
+            {
+                var ((usage, raster), disk) = data;
+                if (!disk ||
+                    !raster.Enabled)
+                {
+                    return;
+                }
+
+                var manifest = usage.Manifest;
+                productionContext.AddSource(
+                    $"{manifest.ClassName}.Rasters.g.cs",
+                    Emitter.EmitDiskRasters(manifest, usage.Used, raster.Formats, raster.Sizes));
+                foreach (var name in usage.Used)
+                {
+                    if (!manifest.Data.TryGetValue(name, out var icon))
                     {
                         continue;
                     }
 
-                    if (disk)
+                    IReadOnlyCollection<string> unsupported;
+                    try
                     {
-                        productionContext.AddSource($"{manifest.ClassName}.Registration.g.cs", Emitter.EmitDiskRegistration(manifest, used));
-                        // The pack's build target reads this list to copy the matching .svg files to output.
-                        productionContext.AddSource($"{manifest.ClassName}.Used.g.cs", Emitter.EmitUsedList(manifest, used));
+                        unsupported = SvgRenderer.Analyse(icon.Body);
                     }
-                    else
+                    catch
                     {
-                        productionContext.AddSource($"{manifest.ClassName}.Registration.g.cs", Emitter.EmitResourceRegistration(manifest, used));
+                        // The build task reports icons it cannot render (IB0003).
+                        continue;
+                    }
+
+                    if (unsupported.Count > 0)
+                    {
+                        productionContext.ReportDiagnostic(Diagnostic.Create(Diagnostics.UnsupportedSvgFeatures, Location.None, manifest.Prefix, name, string.Join(", ", unsupported)));
+                    }
+                }
+            });
+
+        // Resource mode rasters: render each used icon (cached per icon, so an unchanged icon is not rendered
+        // again) and embed the bytes.
+        var rendered = packUsages.Combine(raster).Combine(disk)
+            .SelectMany(static (data, _) =>
+            {
+                var ((usage, raster), disk) = data;
+                var jobs = ImmutableArray.CreateBuilder<RasterJob>();
+                if (disk ||
+                    !raster.Enabled)
+                {
+                    return jobs.ToImmutable();
+                }
+
+                var manifest = usage.Manifest;
+                foreach (var name in usage.Used)
+                {
+                    if (manifest.Data.TryGetValue(name, out var icon))
+                    {
+                        jobs.Add(new(manifest.Prefix, manifest.ClassName, name, icon, raster));
+                    }
+                }
+
+                return jobs.ToImmutable();
+            })
+            .Select(static (job, _) => job.Render());
+
+        context.RegisterSourceOutput(
+            rendered.Collect(),
+            static (productionContext, icons) =>
+            {
+                foreach (var pack in icons.GroupBy(_ => (_.Job.Prefix, _.Job.ClassName)))
+                {
+                    var rasters = new List<RenderedRaster>();
+                    foreach (var icon in pack)
+                    {
+                        var job = icon.Job;
+                        if (icon.Error != null)
+                        {
+                            productionContext.ReportDiagnostic(Diagnostic.Create(Diagnostics.RasterFailed, Location.None, job.Prefix, job.Name, icon.Error));
+                            continue;
+                        }
+
+                        if (icon.Unsupported.Count > 0)
+                        {
+                            productionContext.ReportDiagnostic(Diagnostic.Create(Diagnostics.UnsupportedSvgFeatures, Location.None, job.Prefix, job.Name, string.Join(", ", icon.Unsupported)));
+                        }
+
+                        rasters.AddRange(icon.Rasters);
+                    }
+
+                    if (rasters.Count > 0)
+                    {
+                        productionContext.AddSource($"{pack.Key.ClassName}.Rasters.g.cs", Emitter.EmitResourceRasters(pack.Key.Prefix, pack.Key.ClassName, rasters));
                     }
                 }
             });
@@ -134,23 +262,40 @@ public class IconifyBundleGenerator :
         return null;
     }
 
+    // Member name -> icon name, built once per manifest (the used set is recomputed on every edit, and for
+    // the largest packs the three name sets are tens of thousands of entries).
+    static readonly ConditionalWeakTable<Manifest, Dictionary<string, string>> memberLookups = new();
+
+    static Dictionary<string, string> MemberLookup(Manifest manifest) =>
+        memberLookups.GetValue(manifest, static manifest =>
+        {
+            var memberToIcon = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var (icon, member) in Emitter.Members(manifest))
+            {
+                memberToIcon[member] = icon;
+            }
+
+            // Path members (Disk mode) count as a use of their icon too, as do the raster path members.
+            foreach (var (icon, member) in Emitter.PathMembers(manifest))
+            {
+                memberToIcon[member] = icon;
+            }
+
+            foreach (var (icon, png, bmp) in Emitter.RasterPathMembers(manifest))
+            {
+                memberToIcon[png] = icon;
+                memberToIcon[bmp] = icon;
+            }
+
+            return memberToIcon;
+        });
+
     static List<string> ResolveUsed(
         Manifest manifest,
         IEnumerable<(string Prefix, string Member)> usages,
         IEnumerable<(string ClassName, string Member)> razorUsages)
     {
-        var memberToIcon = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var (icon, member) in Emitter.Members(manifest))
-        {
-            memberToIcon[member] = icon;
-        }
-
-        // Path members (Disk mode) count as a use of their icon too.
-        foreach (var (icon, member) in Emitter.PathMembers(manifest))
-        {
-            memberToIcon[member] = icon;
-        }
-
+        var memberToIcon = MemberLookup(manifest);
         var used = new SortedSet<string>(StringComparer.Ordinal);
 
         // C# usages are resolved semantically to the pack prefix; razor usages are textual, so they carry

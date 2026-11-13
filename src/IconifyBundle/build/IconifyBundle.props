@@ -6,6 +6,13 @@
          build output as .svg files. The two modes are mutually exclusive. The Disk-mode build wiring lives
          in each pack's .targets (imported after the project body, so it sees the final mode value). -->
     <IconifyBundleMode Condition="'$(IconifyBundleMode)' == ''">Resource</IconifyBundleMode>
+
+    <!-- Optional PNG/BMP renderings of the used icons, made at build time (in either mode):
+           IconifyBundleRasterSizes   pixel sizes, e.g. 16;24;32 - rasters are produced only when this is set
+           IconifyBundleRasterFormat  png (default), bmp, or png;bmp
+           IconifyBundleRasterColor   the colour used for currentColor: #RRGGBB, #RRGGBBAA or a CSS colour
+                                      name (default #000000)
+         They reach the generator through IconifyBundle.targets, after the project body has set them. -->
   </PropertyGroup>
 
   <!-- Surface the selected mode to the source generator. -->

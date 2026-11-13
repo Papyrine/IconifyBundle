@@ -1,0 +1,16 @@
+﻿{
+  Diagnostics: [
+    {
+      Message: IconifyBundleRasterFormat 'gif' is not valid: 'gif' is not a supported format (use png, bmp, or both),
+      Severity: Error,
+      Descriptor: {
+        Id: IB0001,
+        Title: Invalid IconifyBundle raster properties,
+        MessageFormat: {0},
+        Category: IconifyBundle,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    }
+  ]
+}

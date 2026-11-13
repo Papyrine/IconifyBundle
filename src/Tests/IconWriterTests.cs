@@ -57,4 +57,57 @@ public class IconWriterTests
         // 'ghost' was requested but is not in the pack - reported as missing.
         await Assert.That(missing).Contains("ghost");
     }
+
+    // Disk mode's files must be byte-for-byte what Resource mode embeds, so the two modes agree.
+    [Test]
+    public async Task WriteRasters_matches_the_bytes_the_generator_embeds()
+    {
+        using var dir = new TempDirectory();
+        var content =
+            "prefix=feather\nclass=Feather\n\n" +
+            Manifest.FormatDataLine("activity", 24, 24, RasterTests.FeatherActivity) + "\n" +
+            Manifest.FormatDataLine("zap", 24, 24, "<rect/>") + "\n";
+        var outDir = Path.Combine(dir, "out");
+
+        // The raw MSBuild values, as the pack's target passes them.
+        var failures = IconWriter.WriteRasters(IconWriter.ParseIconData(content), ["activity", "ghost"], outDir, "png;bmp", "16;24", "#336699");
+
+        await Assert.That(failures).IsEmpty();
+        await Assert.That(Directory.GetFiles(outDir, "*", SearchOption.AllDirectories).Select(_ => Path.GetRelativePath(outDir, _).Replace('\\', '/')).Order())
+            .IsEquivalentTo(["16/activity.bmp", "16/activity.png", "24/activity.bmp", "24/activity.png"]);
+
+        // The generator gets the forms IconifyBundle.targets hands over, and emits (icon, size, format) order.
+        var result = GeneratorRunner.Run(content, disk: false, source: usage, rasterFormats: "png,bmp", rasterSizes: "16,24", rasterColor: "336699");
+        var rasters = result.Results.Single().GeneratedSources.Single(_ => _.HintName == "Feather.Rasters.g.cs").SourceText.ToString();
+        var embedded = Regex.Matches(rasters[rasters.IndexOf("new byte[]", StringComparison.Ordinal)..], @"\d+")
+            .Select(_ => byte.Parse(_.Value))
+            .ToArray();
+        var written = new[] { "16/activity.png", "16/activity.bmp", "24/activity.png", "24/activity.bmp" }
+            .SelectMany(_ => File.ReadAllBytes(Path.Combine(outDir, _)))
+            .ToArray();
+
+        await Assert.That(embedded.SequenceEqual(written)).IsTrue();
+    }
+
+    [Test]
+    public async Task WriteRasters_rejects_invalid_properties() =>
+        await Assert.That(() => IconWriter.WriteRasters(new Dictionary<string, IconEntry>(), [], "out", "png", "big", null))
+            .Throws<ArgumentException>();
+
+    const string usage =
+        """
+        namespace IconifyBundle
+        {
+            [IconifyPack("feather")]
+            public static class Feather
+            {
+                public static Icon Activity => default;
+            }
+        }
+
+        public class Use
+        {
+            public static IconifyBundle.Icon A = IconifyBundle.Feather.Activity;
+        }
+        """;
 }

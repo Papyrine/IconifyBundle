@@ -108,7 +108,8 @@ static class PackProjectWriter
 
     // Disk mode: the generator emits a (compile-inert) "<Pascal>.Used.g.cs" listing the referenced icons.
     // After compilation, reconstruct just those icons' .svg files from the pack's single .icondata (via the
-    // shipped WriteUsedIcons task) into the output (under iconifybundle/<prefix>/), then mirror them into the
+    // shipped WriteUsedIcons task) into the output (under iconifybundle/<prefix>/), plus their PNG/BMP renderings
+    // when IconifyBundleRasterSizes is set (under iconifybundle/<prefix>/<size>/), then mirror them into the
     // publish output. Item/target names are pack-scoped so multiple referenced packs don't collide.
     // The <UsingTask> for WriteUsedIcons is registered once in IconifyBundle/build/IconifyBundle.targets
     // (transitively imported here via the IconifyBundle PackageReference), so the task dll ships once - in
@@ -136,23 +137,29 @@ static class PackProjectWriter
                 <_IconifyUsedName_{pascal} Include="@(_IconifyUsedLine_{pascal})"
                   Condition="'%(Identity)' != '' and !$([System.String]::new('%(Identity)').StartsWith('/')) and !$([System.String]::new('%(Identity)').StartsWith('#'))" />
               </ItemGroup>
+              <!-- The raster properties are passed raw; with IconifyBundleRasterSizes set, the task also
+                   renders each used icon to <size>/<name>.<format> next to the .svg files. -->
               <WriteUsedIcons Condition="'@(_IconifyUsedName_{pascal})' != ''"
                               IconData="$(MSBuildThisFileDirectory){prefix}.icondata"
                               UsedNames="@(_IconifyUsedName_{pascal})"
-                              OutputDir="$(OutDir)iconifybundle/{prefix}" />
+                              OutputDir="$(OutDir)iconifybundle/{prefix}"
+                              RasterFormats="$(IconifyBundleRasterFormat)"
+                              RasterSizes="$(IconifyBundleRasterSizes)"
+                              RasterColor="$(IconifyBundleRasterColor)" />
             </Target>
-            <!-- The above writes to the build output; dotnet publish needs the same files under PublishDir.
-                 Build runs before publish, so the OutDir files already exist by here. -->
+            <!-- The above writes to the build output; dotnet publish needs the same files (the .svg files and
+                 any rasters in their size folders) under PublishDir. Build runs before publish, so the OutDir
+                 files already exist by here. -->
             <Target Name="IconifyBundlePublishUsed_{pascal}"
                     BeforeTargets="CopyFilesToPublishDirectory"
                     Condition="'$(IconifyBundleMode)' == 'Disk'">
               <ItemGroup>
-                <_IconifyPublishSvg_{pascal} Include="$(OutDir)iconifybundle/{prefix}/*.svg" />
+                <_IconifyPublishFile_{pascal} Include="$(OutDir)iconifybundle/{prefix}/**/*" />
               </ItemGroup>
-              <Copy SourceFiles="@(_IconifyPublishSvg_{pascal})"
-                    DestinationFiles="@(_IconifyPublishSvg_{pascal}->'$(PublishDir)iconifybundle/{prefix}/%(Filename)%(Extension)')"
+              <Copy SourceFiles="@(_IconifyPublishFile_{pascal})"
+                    DestinationFiles="@(_IconifyPublishFile_{pascal}->'$(PublishDir)iconifybundle/{prefix}/%(RecursiveDir)%(Filename)%(Extension)')"
                     SkipUnchangedFiles="true"
-                    Condition="'@(_IconifyPublishSvg_{pascal})' != ''" />
+                    Condition="'@(_IconifyPublishFile_{pascal})' != ''" />
             </Target>
           </Project>
 
