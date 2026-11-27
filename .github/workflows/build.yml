@@ -94,7 +94,7 @@ jobs:
 
       - name: Install Playwright
         shell: pwsh
-        run: sample/IconifyBundle.Web.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+        run: sample/IconifyBundle.Web.Tests/bin/Release/net11.0/playwright.ps1 install --with-deps chromium
 
       - name: Web tests
         run: dotnet test --solution sample/Sample.slnx --configuration Release --no-build --results-directory TestResults --report-trx
